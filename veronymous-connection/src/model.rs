@@ -103,50 +103,47 @@ impl SerializableMessage for ConnectResponse {
 
 #[cfg(test)]
 mod tests {
-    use crate::model::{ConnectRequest, ConnectResponse, ConnectionMessage, SerializableMessage};
+    use crate::model::{ConnectRequest, ConnectResponse, SerializableMessage};
 
     #[test]
     fn serialization_tests() {
         let connect_request = connect_request();
-        let connection_message = ConnectionMessage::ConnectRequest(connect_request);
 
         // Serialize
-        let serialized = connection_message.to_bytes();
+        let serialized = connect_request.to_bytes();
 
         // Deserialize
-        let result = ConnectionMessage::from_bytes(&serialized);
+        let result = ConnectRequest::from_bytes(&serialized);
         assert!(result.is_ok());
 
         let deserialized = result.unwrap();
-        assert_eq!(connection_message, deserialized);
+        assert_eq!(connect_request, deserialized);
 
         let connect_response = connect_response();
-        let connection_message = ConnectionMessage::ConnectResponse(connect_response.clone());
 
         // Serialize
-        let serialized = connection_message.to_bytes();
+        let serialized = connect_response.to_bytes();
 
         // Deserialize
-        let result = ConnectionMessage::from_bytes(&serialized);
+        let result = ConnectResponse::from_bytes(&serialized);
         assert!(result.is_ok());
 
         let deserialized = result.unwrap();
-        assert_eq!(connection_message, deserialized);
+        assert_eq!(connect_response, deserialized);
 
         // Connection response with accepted = false
         let mut connect_response = connect_response.clone();
         connect_response.accepted = false;
-        let connection_message = ConnectionMessage::ConnectResponse(connect_response);
 
         // Serialize
-        let serialized = connection_message.to_bytes();
+        let serialized = connect_response.to_bytes();
 
         // Deserialize
-        let result = ConnectionMessage::from_bytes(&serialized);
+        let result = ConnectResponse::from_bytes(&serialized);
         assert!(result.is_ok());
 
         let deserialized = result.unwrap();
-        assert_eq!(connection_message, deserialized)
+        assert_eq!(connect_response, deserialized)
     }
 
     fn connect_request() -> ConnectRequest {

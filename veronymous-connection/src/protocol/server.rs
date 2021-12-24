@@ -60,7 +60,6 @@ impl RequestResponseCodec for ConnectionServerCodec {
     where
         T: AsyncWriteExt + AsyncWrite + Unpin + Send,
     {
-        io.close().await?;
         Err(std::io::Error::from(std::io::ErrorKind::Unsupported))
     }
 

@@ -9,6 +9,8 @@ const DEFAULT_CONFIG_LOCATION: &str = "veronymous_router_agent.yml";
 #[derive(Clone, Debug, Deserialize)]
 pub struct VeronymousAgentConfig {
     pub address: String,
+
+    pub wg_address: String,
 }
 
 impl VeronymousAgentConfig {

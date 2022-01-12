@@ -1,4 +1,4 @@
-use futures::channel::mpsc;
+/*use futures::channel::mpsc;
 use futures::{SinkExt, StreamExt};
 use libp2p::core::muxing::StreamMuxerBox;
 use libp2p::core::transport;
@@ -129,12 +129,17 @@ fn mk_transport() -> (PeerId, transport::Boxed<(PeerId, StreamMuxerBox)>) {
 }
 
 fn connect_request_object() -> ConnectRequest {
-    ConnectRequest::new([
-        148, 59, 217, 215, 192, 60, 91, 222, 49, 113, 226, 92, 207, 79, 18, 57, 42, 23, 23, 8, 64,
-        149, 105, 64, 85, 86, 121, 15, 13, 212, 3, 65,
-    ])
+    ConnectRequest::new(
+        [
+            148, 59, 217, 215, 192, 60, 91, 222, 49, 113, 226, 92, 207, 79, 18, 57, 42, 23, 23, 8,
+            64, 149, 105, 64, 85, 86, 121, 15, 13, 212, 3, 65,
+        ],
+        [13, 15, 34, 54],
+        [36, 129, 234, 11],
+    )
 }
 
 fn connect_response_object() -> ConnectResponse {
     ConnectResponse::new(true)
 }
+*/

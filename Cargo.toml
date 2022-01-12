@@ -9,6 +9,6 @@ authors = ["Noah Bouma"]
 [workspace]
 members = [
     "veronymous-router-agent",
-    "veronymous-client",
-    "veronymous-connection"
+    "veronymous-connection",
+    "veronymous-client"
 ]

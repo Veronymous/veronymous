@@ -1,5 +1,5 @@
 [package]
-name = "veronymous-connection"
+name = "veronymous_connection"
 version = "0.1.0"
 edition = "2021"
 description = "Implementation of the Veronymous connection protocol"
@@ -7,19 +7,14 @@ description = "Implementation of the Veronymous connection protocol"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rand = "0.8.4"
 serde = { version = "^1.0", features = ["derive"] }
-serde_json = "^1.0"
-libp2p = "0.41.0"
-futures = "0.3.17"
 log = "0.4.14"
 env_logger = "0.9.0"
 thiserror = "1.0.30"
-void = "1.0.2"
-async-trait = "0.1.52"
 
+# Might not need actix-rt
 [dev-dependencies]
-async-std = "1.10.0"
-actix-rt = "2.5.0"
+#async-std = "1.10.0"
+#actix-rt = "2.5.0"
 base64 = "0.13.0"
 #tokio = { version = "1.15.0", features = ["macros", "rt", "rt-multi-thread"] }

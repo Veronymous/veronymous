@@ -1,1 +1,2 @@
-address: /ip4/0.0.0.0/tcp/8080
+address: 127.0.0.1:7777
+wg_address: http://nbouma-vm:50051

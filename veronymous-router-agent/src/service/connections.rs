@@ -1,6 +1,6 @@
 use crate::service::wireguard::WireguardService;
 use crate::{AgentError, VeronymousAgentConfig};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use veronymous_connection::model::{Ipv4Address, PublicKey};
 
 /*
@@ -13,7 +13,7 @@ use veronymous_connection::model::{Ipv4Address, PublicKey};
 const BASE_ADDRESS: [u8; 4] = [10, 8, 0, 1];
 
 pub struct RouterConnectionsService {
-    peers: HashMap<PublicKey, Ipv4Address>,
+    peers: HashSet<PublicKey>,
 
     last_address: Ipv4Address,
 
@@ -23,14 +23,14 @@ pub struct RouterConnectionsService {
 impl RouterConnectionsService {
     pub async fn create(config: &VeronymousAgentConfig) -> Result<Self, AgentError> {
         Ok(Self {
-            peers: HashMap::new(),
+            peers: HashSet::new(),
             last_address: Ipv4Address::from(BASE_ADDRESS),
             wg_service: WireguardService::create(config).await?,
         })
     }
 
     pub fn new(
-        peers: HashMap<PublicKey, Ipv4Address>,
+        peers: HashSet<PublicKey>,
         last_address: Ipv4Address,
         wg_service: WireguardService,
     ) -> Self {
@@ -58,22 +58,25 @@ impl RouterConnectionsService {
             .add_peer(&public_key, address.clone())
             .await?;
 
-        self.peers.insert(public_key.clone(), address);
+        self.peers.insert(public_key.clone());
 
         Ok(address)
     }
 
     pub async fn clear_connections(&mut self) -> Result<(), AgentError> {
-        for key in self.peers.clone().keys() {
-            match self.wg_service.remove_peer(key).await {
+        for key in self.peers.clone() {
+            match self.wg_service.remove_peer(&key).await {
                 Ok(()) => {
-                    self.peers.remove(key);
+                    self.peers.remove(&key);
                 }
                 Err(err) => {
                     error!("{:?}", err);
                 }
             }
         }
+
+        // Reset the ip address
+        self.last_address = BASE_ADDRESS;
 
         Ok(())
     }

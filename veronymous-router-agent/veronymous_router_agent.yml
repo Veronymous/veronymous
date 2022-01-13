@@ -1,3 +1,8 @@
 address: 127.0.0.1:7777
+
 wg_address: http://nbouma-vm:50051
+
 epoch_length: 10
+
+redis_password: password
+redis_address: localhost:6379

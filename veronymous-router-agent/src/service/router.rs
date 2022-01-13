@@ -46,6 +46,10 @@ impl VeronymousRouterAgentService {
         Ok(())
     }
 
+    pub async fn clear_connections(&mut self) -> Result<(), AgentError> {
+        self.connections.clear_connections().await
+    }
+
     // TODO: Take in specific parameters instead of the full request object
     fn verify_connect_request(&self, _request: &ConnectRequest) -> Result<bool, AgentError> {
         // TODO

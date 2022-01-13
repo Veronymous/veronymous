@@ -1,5 +1,7 @@
 use crate::{AgentError, VeronymousAgentConfig};
 
-mod connections;
+pub mod epoch;
 pub mod router;
+
+mod connections;
 mod wireguard;

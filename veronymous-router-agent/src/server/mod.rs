@@ -1,10 +1,13 @@
 use crate::service::router::VeronymousRouterAgentService;
 use crate::{AgentError, VeronymousAgentConfig};
 use std::sync::Arc;
+use std::time::{Duration};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::Mutex;
+use tokio::time::Instant;
 use veronymous_connection::model::{ConnectMessage, SerializableMessage, CONNECT_REQUEST_SIZE};
+use crate::service::epoch::EpochService;
 
 // TODO: Review shared state - https://tokio.rs/tokio/tutorial/shared-state
 
@@ -18,6 +21,8 @@ pub struct VeronymousRouterAgentServer {
     address: String,
 
     service: RouterService,
+
+    epoch_service: EpochService,
 }
 
 impl VeronymousRouterAgentServer {
@@ -29,6 +34,7 @@ impl VeronymousRouterAgentServer {
             service: Arc::new(Mutex::new(
                 VeronymousRouterAgentService::create(&config).await?,
             )),
+            epoch_service: EpochService::create(&config),
         })
     }
 
@@ -37,6 +43,8 @@ impl VeronymousRouterAgentServer {
         let listener = TcpListener::bind(&self.address)
             .await
             .map_err(|e| AgentError::InitializationError(e.to_string()))?;
+
+        self.schedule_connection_cleaner().await;
 
         self.listen(&listener).await?;
 
@@ -66,6 +74,38 @@ impl VeronymousRouterAgentServer {
                 };
             });
         }
+    }
+
+    /*
+     * Removes all connections after each epoch
+     * TODO: Figure out a way to make this seamless (buffer)
+     * TODO: Might want to put this in one of the services.
+     */
+    async fn schedule_connection_cleaner(&self) {
+        info!("Scheduling connection cleaner...");
+
+        let next_epoch = self.epoch_service.next_epoch();
+        let epoch_duration = self.epoch_service.epoch_duration();
+
+        info!("Next epoch: {:?}", next_epoch);
+        info!("Epoch duration: {}s", epoch_duration.as_secs());
+
+        let service = self.service.clone();
+
+        tokio::spawn(async move {
+            let mut interval_timer = tokio::time::interval_at(next_epoch, epoch_duration);
+            loop {
+                interval_timer.tick().await;
+                println!("Connection cleaner task...");
+
+                let mut locked_service = service.lock().await;
+
+                match locked_service.clear_connections().await {
+                    Ok(_) => info!("Connections cleared!"),
+                    Err(err) => error!("Got error while clearing connections. {:?}", err)
+                }
+            }
+        });
     }
 
     async fn handle_connection(

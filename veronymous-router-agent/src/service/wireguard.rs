@@ -3,7 +3,7 @@ use std::str::FromStr;
 use tonic::transport::{Channel, Endpoint};
 use veronymous_connection::model::{Ipv4Address, PublicKey};
 use wg_manager_service_common::wg_manager_service::wireguard_manager_service_client::WireguardManagerServiceClient;
-use wg_manager_service_common::wg_manager_service::AddPeerRequest;
+use wg_manager_service_common::wg_manager_service::{AddPeerRequest, RemovePeerRequest};
 
 use crate::{AgentError, VeronymousAgentConfig};
 
@@ -50,10 +50,21 @@ impl WireguardService {
         self.client
             .add_peer(request)
             .await
-            .map_err(|e| AgentError::WireguardError(format!("{:?}", e)))?;
+            .map_err(|e| AgentError::WireguardError(format!("Could not add peer. {:?}", e)))?;
 
         Ok(())
     }
 
-    pub async fn remove_peer(&self, public_key: &PublicKey) {}
+    pub async fn remove_peer(&mut self, public_key: &PublicKey) -> Result<(), AgentError> {
+        let public_key = base64::encode(public_key);
+
+        let request = tonic::Request::new(RemovePeerRequest { public_key });
+
+        self.client
+            .remove_peer(request)
+            .await
+            .map_err(|e| AgentError::WireguardError(format!("Could not remove peer. {:?}", e)))?;
+
+        Ok(())
+    }
 }

@@ -63,6 +63,22 @@ impl RouterConnectionsService {
         Ok(address)
     }
 
+    pub async fn clear_connections(&mut self) -> Result<(), AgentError> {
+        for key in self.peers.clone().keys() {
+            match self.wg_service.remove_peer(key).await {
+                Ok(()) => {
+                    self.peers.remove(key);
+                }
+                Err(err) => {
+                    error!("{:?}", err);
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    // TODO: Check if address exists
     fn assign_address(&mut self) -> Result<Ipv4Address, AgentError> {
         let host_id = self.last_address[3];
 

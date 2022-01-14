@@ -14,7 +14,7 @@ impl EpochService {
     pub fn create(config: &VeronymousAgentConfig) -> Self {
         Self {
             // Convert minutes to seconds
-            epoch_length: config.epoch_length * 60
+            epoch_length: config.epoch_length * 60,
         }
     }
 
@@ -37,7 +37,6 @@ impl EpochService {
         let now_instant = Instant::now();
 
         let now = now.duration_since(UNIX_EPOCH).unwrap().as_secs();
-
 
         // Get the current epoch start
         let current_epoch = now - (now % self.epoch_length);

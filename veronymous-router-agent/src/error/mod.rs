@@ -22,4 +22,7 @@ pub enum AgentError {
 
     #[error("Wireguard error. {0}")]
     WireguardError(String),
+
+    #[error("Database error. {0}")]
+    DBError(String),
 }

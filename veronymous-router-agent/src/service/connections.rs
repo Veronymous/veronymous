@@ -1,44 +1,33 @@
+use crate::db::connections_db::redis::RedisConnectionsDB;
+use crate::db::connections_db::ConnectionsDB;
 use crate::service::wireguard::WireguardService;
 use crate::{AgentError, VeronymousAgentConfig};
 use std::collections::{HashMap, HashSet};
 use veronymous_connection::model::{Ipv4Address, PublicKey};
 
-/*
-* TODO: Store users in REDIS
-*/
-
 // TODO: IP Address assignment needs some more work
 // TODO: This might have to be configurable
 // TODO: Might also want to set the range or support ranges
+// TODO: Cache assigned ip in redis
 const BASE_ADDRESS: [u8; 4] = [10, 8, 0, 1];
 
 pub struct RouterConnectionsService {
-    peers: HashSet<PublicKey>,
-
+    //peers: HashSet<PublicKey>,
     last_address: Ipv4Address,
 
     wg_service: WireguardService,
+
+    connections_db: RedisConnectionsDB,
 }
 
 impl RouterConnectionsService {
     pub async fn create(config: &VeronymousAgentConfig) -> Result<Self, AgentError> {
         Ok(Self {
-            peers: HashSet::new(),
+            //peers: HashSet::new(),
             last_address: Ipv4Address::from(BASE_ADDRESS),
             wg_service: WireguardService::create(config).await?,
+            connections_db: RedisConnectionsDB::create(&config.redis_address)?,
         })
-    }
-
-    pub fn new(
-        peers: HashSet<PublicKey>,
-        last_address: Ipv4Address,
-        wg_service: WireguardService,
-    ) -> Self {
-        Self {
-            peers,
-            last_address,
-            wg_service,
-        }
     }
 
     pub async fn add_connection(
@@ -58,22 +47,29 @@ impl RouterConnectionsService {
             .add_peer(&public_key, address.clone())
             .await?;
 
-        self.peers.insert(public_key.clone());
+        self.connections_db.store_connection(public_key)?;
 
         Ok(address)
     }
 
     pub async fn clear_connections(&mut self) -> Result<(), AgentError> {
-        for key in self.peers.clone() {
+        // Get the existing connections
+        let connections = self.connections_db.get_connections()?;
+
+        debug!("Removing connections: {:?}", connections);
+
+        // Remove the connections from wireguard
+        for key in connections {
             match self.wg_service.remove_peer(&key).await {
-                Ok(()) => {
-                    self.peers.remove(&key);
-                }
+                Ok(()) => {}
                 Err(err) => {
                     error!("{:?}", err);
                 }
             }
         }
+
+        // Remove the connections from the database
+        self.connections_db.clear_connections()?;
 
         // Reset the ip address
         self.last_address = BASE_ADDRESS;

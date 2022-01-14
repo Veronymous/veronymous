@@ -1,13 +1,13 @@
+use crate::service::epoch::EpochService;
 use crate::service::router::VeronymousRouterAgentService;
 use crate::{AgentError, VeronymousAgentConfig};
 use std::sync::Arc;
-use std::time::{Duration};
+use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::Mutex;
 use tokio::time::Instant;
 use veronymous_connection::model::{ConnectMessage, SerializableMessage, CONNECT_REQUEST_SIZE};
-use crate::service::epoch::EpochService;
 
 // TODO: Review shared state - https://tokio.rs/tokio/tutorial/shared-state
 
@@ -97,13 +97,13 @@ impl VeronymousRouterAgentServer {
             let mut interval_timer = tokio::time::interval_at(next_epoch, epoch_duration);
             loop {
                 interval_timer.tick().await;
-                println!("Connection cleaner task...");
+                info!("Clearing connections...");
 
                 let mut locked_service = service.lock().await;
 
                 match locked_service.clear_connections().await {
                     Ok(_) => info!("Connections cleared!"),
-                    Err(err) => error!("Got error while clearing connections. {:?}", err)
+                    Err(err) => error!("Got error while clearing connections. {:?}", err),
                 }
             }
         });

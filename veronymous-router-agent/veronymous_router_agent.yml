@@ -4,5 +4,4 @@ wg_address: http://nbouma-vm:50051
 
 epoch_length: 10
 
-redis_password: password
-redis_address: localhost:6379
+redis_address: redis://default:password@172.17.0.2:6379

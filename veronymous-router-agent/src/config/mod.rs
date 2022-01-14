@@ -13,6 +13,8 @@ pub struct VeronymousAgentConfig {
     pub wg_address: String,
 
     pub epoch_length: u64,
+
+    pub redis_address: String,
 }
 
 impl VeronymousAgentConfig {

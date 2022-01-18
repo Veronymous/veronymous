@@ -19,10 +19,11 @@ impl WireguardService {
 
         let client = WireguardManagerServiceClient::connect(endpoint)
             .await
-            .map_err(|e| {
+            .map_err(|err| {
                 AgentError::InitializationError(format!(
-                    "Could not connect to wireguard server ({})",
-                    config.address
+                    "Could not connect to wireguard server ({}). {:?}",
+                    config.address,
+                    err
                 ))
             })?;
 

@@ -2,6 +2,7 @@ address: 127.0.0.1:7777
 
 wg_address: http://nbouma-vm:50051
 
-epoch_length: 10
+epoch_length: 1
 
-redis_address: redis://default:password@172.17.0.2:6379
+connections_redis_address: redis://default:password@172.17.0.2:6379/1
+connections_state_redis_address: redis://default:password@172.17.0.2:6379/2

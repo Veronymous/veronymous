@@ -1,32 +1,36 @@
+use veronymous_connection::model::{Ipv4Address, PublicKey};
+
 use crate::db::connections_db::redis::RedisConnectionsDB;
 use crate::db::connections_db::ConnectionsDB;
+use crate::db::connections_state_db::redis::RedisConnectionsStateDB;
+use crate::db::connections_state_db::ConnectionsStateDB;
 use crate::service::wireguard::WireguardService;
 use crate::{AgentError, VeronymousAgentConfig};
-use std::collections::{HashMap, HashSet};
-use veronymous_connection::model::{Ipv4Address, PublicKey};
 
 // TODO: IP Address assignment needs some more work
 // TODO: This might have to be configurable
 // TODO: Might also want to set the range or support ranges
-// TODO: Cache assigned ip in redis
 const BASE_ADDRESS: [u8; 4] = [10, 8, 0, 1];
 
 pub struct RouterConnectionsService {
-    //peers: HashSet<PublicKey>,
-    last_address: Ipv4Address,
-
     wg_service: WireguardService,
 
     connections_db: RedisConnectionsDB,
+
+    connections_state_db: RedisConnectionsStateDB,
 }
 
 impl RouterConnectionsService {
     pub async fn create(config: &VeronymousAgentConfig) -> Result<Self, AgentError> {
+        let mut connections_state_db =
+            RedisConnectionsStateDB::create(&config.connections_state_redis_address, BASE_ADDRESS)?;
+
+        connections_state_db.init()?;
+
         Ok(Self {
-            //peers: HashSet::new(),
-            last_address: Ipv4Address::from(BASE_ADDRESS),
             wg_service: WireguardService::create(config).await?,
-            connections_db: RedisConnectionsDB::create(&config.redis_address)?,
+            connections_db: RedisConnectionsDB::create(&config.connections_redis_address)?,
+            connections_state_db,
         })
     }
 
@@ -34,7 +38,7 @@ impl RouterConnectionsService {
         &mut self,
         public_key: &PublicKey,
     ) -> Result<Ipv4Address, AgentError> {
-        let address = self.assign_address()?;
+        let address = self.connections_state_db.next_ip_address()?;
 
         debug!(
             "Connecting peer: PEER_ID {} ADDRESS {:?}",
@@ -72,33 +76,8 @@ impl RouterConnectionsService {
         self.connections_db.clear_connections()?;
 
         // Reset the ip address
-        self.last_address = BASE_ADDRESS;
+        self.connections_state_db.reset_state()?;
 
         Ok(())
-    }
-
-    // TODO: Check if address exists
-    fn assign_address(&mut self) -> Result<Ipv4Address, AgentError> {
-        let host_id = self.last_address[3];
-
-        let mut new_address = self.last_address.clone();
-
-        if host_id >= 255 {
-            // Host id
-            new_address[3] = 1;
-            new_address[2] = self.last_address[2] + 1;
-
-            if new_address[2] > 255 {
-                // TODO: Handle this
-                return Err(AgentError::IpError(format!("IP address out of range.")));
-            }
-        } else {
-            // Increase the host id
-            new_address[3] = self.last_address[3] + 1;
-        }
-
-        self.last_address = new_address.clone();
-
-        Ok(new_address)
     }
 }

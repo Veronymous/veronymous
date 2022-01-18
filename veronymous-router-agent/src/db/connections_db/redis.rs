@@ -9,13 +9,11 @@ pub struct RedisConnectionsDB {
 
 impl RedisConnectionsDB {
     pub fn create(address: &String) -> Result<Self, AgentError> {
-        info!("Connecting to redis server: {}", address);
-
         let client = redis::Client::open(address.as_str()).map_err(|err| {
             AgentError::InitializationError(format!("Could not connect to redis. {:?}", err))
         })?;
 
-        let mut connection = client.get_connection().map_err(|err| {
+        let connection = client.get_connection().map_err(|err| {
             AgentError::InitializationError(format!("Could not connect to redis. {:?}", err))
         })?;
 

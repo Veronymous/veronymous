@@ -3,7 +3,7 @@ use crate::{AgentError, VeronymousAgentConfig};
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 use veronymous_connection::model::{
-    ConnectMessage, ConnectRequest, ConnectResponse, Ipv4Address, SerializableMessage,
+    ConnectMessage, ConnectRequest, ConnectResponse, SerializableMessage,
 };
 
 pub struct VeronymousRouterAgentService {

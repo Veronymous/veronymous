@@ -1,6 +1,5 @@
 pub mod redis;
 
-use std::iter::Iterator;
 use veronymous_connection::model::PublicKey;
 
 use crate::AgentError;

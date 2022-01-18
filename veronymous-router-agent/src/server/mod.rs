@@ -2,11 +2,9 @@ use crate::service::epoch::EpochService;
 use crate::service::router::VeronymousRouterAgentService;
 use crate::{AgentError, VeronymousAgentConfig};
 use std::sync::Arc;
-use std::time::Duration;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::AsyncReadExt;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::Mutex;
-use tokio::time::Instant;
 use veronymous_connection::model::{ConnectMessage, SerializableMessage, CONNECT_REQUEST_SIZE};
 
 // TODO: Review shared state - https://tokio.rs/tokio/tutorial/shared-state

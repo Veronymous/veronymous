@@ -14,7 +14,9 @@ pub struct VeronymousAgentConfig {
 
     pub epoch_length: u64,
 
-    pub redis_address: String,
+    pub connections_redis_address: String,
+
+    pub connections_state_redis_address: String,
 }
 
 impl VeronymousAgentConfig {

@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use crate::error::AgentError;
 
 use config::{Config, File};
@@ -10,7 +11,7 @@ const DEFAULT_CONFIG_LOCATION: &str = "veronymous_router_agent.yml";
 pub struct VeronymousAgentConfig {
     pub address: String,
 
-    pub wg_address: String,
+    pub wg_addresses: HashSet<String>,
 
     pub epoch_length: u64,
 

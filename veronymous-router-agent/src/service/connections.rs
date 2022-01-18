@@ -10,7 +10,7 @@ use crate::{AgentError, VeronymousAgentConfig};
 // TODO: IP Address assignment needs some more work
 // TODO: This might have to be configurable
 // TODO: Might also want to set the range or support ranges
-const BASE_ADDRESS: [u8; 4] = [10, 8, 0, 1];
+const BASE_ADDRESS: [u8; 4] = [10, 8, 0, 2];
 
 pub struct RouterConnectionsService {
     wg_service: WireguardService,

@@ -7,11 +7,6 @@ use crate::db::connections_state_db::ConnectionsStateDB;
 use crate::service::wireguard::WireguardService;
 use crate::{AgentError, VeronymousAgentConfig};
 
-// TODO: IP Address assignment needs some more work
-// TODO: This might have to be configurable
-// TODO: Might also want to set the range or support ranges
-const BASE_ADDRESS: [u8; 4] = [10, 8, 0, 2];
-
 pub struct RouterConnectionsService {
     wg_service: WireguardService,
 
@@ -22,9 +17,8 @@ pub struct RouterConnectionsService {
 
 impl RouterConnectionsService {
     pub async fn create(config: &VeronymousAgentConfig) -> Result<Self, AgentError> {
-        let mut connections_state_db =
-            RedisConnectionsStateDB::create(&config.connections_state_redis_address, BASE_ADDRESS)?;
-
+        // Connect to redis
+        let mut connections_state_db = RedisConnectionsStateDB::create(&config)?;
         connections_state_db.init()?;
 
         Ok(Self {

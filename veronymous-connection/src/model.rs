@@ -24,8 +24,8 @@ pub trait SerializableMessage {
     fn to_bytes(&self) -> Vec<u8>;
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, ConnectionError>
-        where
-            Self: Sized;
+    where
+        Self: Sized;
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -39,7 +39,7 @@ impl SerializableMessage for ConnectMessage {
     fn to_bytes(&self) -> Vec<u8> {
         let (id, mut message_bytes) = match self {
             ConnectMessage::ConnectRequest(message) => (CONNECT_REQUEST_ID, message.to_bytes()),
-            ConnectMessage::ConnectResponse(message) => (CONNECT_RESPONSE_ID, message.to_bytes())
+            ConnectMessage::ConnectResponse(message) => (CONNECT_RESPONSE_ID, message.to_bytes()),
         };
 
         message_bytes.insert(0, id);
@@ -47,7 +47,10 @@ impl SerializableMessage for ConnectMessage {
         message_bytes
     }
 
-    fn from_bytes(bytes: &[u8]) -> Result<Self, ConnectionError> where Self: Sized {
+    fn from_bytes(bytes: &[u8]) -> Result<Self, ConnectionError>
+    where
+        Self: Sized,
+    {
         if bytes.len() < MIN_CONNECT_MESSAGE_SIZE {
             return Err(ConnectionError::DeserializationError(format!(
                 "Byte string is of invalid length. Minimum length expected: {}, length of byte string: {}",
@@ -61,7 +64,12 @@ impl SerializableMessage for ConnectMessage {
         let message = match id {
             CONNECT_REQUEST_ID => Self::ConnectRequest(ConnectRequest::from_bytes(&bytes[1..])?),
             CONNECT_RESPONSE_ID => Self::ConnectResponse(ConnectResponse::from_bytes(&bytes[1..])?),
-            _ => return Err(ConnectionError::DeserializationError(format!("Invalid identifier: {}", id)))
+            _ => {
+                return Err(ConnectionError::DeserializationError(format!(
+                    "Invalid identifier: {}",
+                    id
+                )))
+            }
         };
 
         Ok(message)
@@ -75,12 +83,8 @@ pub struct ConnectRequest {
 }
 
 impl ConnectRequest {
-    pub fn new(
-        public_key: [u8; KEY_SIZE],
-    ) -> Self {
-        Self {
-            public_key,
-        }
+    pub fn new(public_key: [u8; KEY_SIZE]) -> Self {
+        Self { public_key }
     }
 }
 
@@ -93,8 +97,8 @@ impl SerializableMessage for ConnectRequest {
     }
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, ConnectionError>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         if bytes.len() != CONNECT_REQUEST_SIZE {
             return Err(ConnectionError::DeserializationError(format!(
@@ -134,8 +138,8 @@ impl SerializableMessage for ConnectResponse {
     }
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, ConnectionError>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         if bytes.len() != CONNECT_RESPONSE_SIZE {
             return Err(ConnectionError::DeserializationError(format!(
@@ -157,7 +161,10 @@ impl SerializableMessage for ConnectResponse {
 
         let address = &bytes[1..5];
 
-        Ok(Self { accepted, address: address.try_into().unwrap() })
+        Ok(Self {
+            accepted,
+            address: address.try_into().unwrap(),
+        })
     }
 }
 
@@ -193,22 +200,18 @@ mod tests {
     }
 
     fn connect_request() -> ConnectMessage {
-        ConnectMessage::ConnectRequest(
-            ConnectRequest {
-                public_key: [
-                    148, 59, 217, 215, 192, 60, 91, 222, 49, 113, 226, 92, 207, 79, 18, 57, 42, 23, 23,
-                    8, 64, 149, 105, 64, 85, 86, 121, 15, 13, 212, 3, 65,
-                ],
-            }
-        )
+        ConnectMessage::ConnectRequest(ConnectRequest {
+            public_key: [
+                148, 59, 217, 215, 192, 60, 91, 222, 49, 113, 226, 92, 207, 79, 18, 57, 42, 23, 23,
+                8, 64, 149, 105, 64, 85, 86, 121, 15, 13, 212, 3, 65,
+            ],
+        })
     }
 
     fn connect_response() -> ConnectMessage {
-        ConnectMessage::ConnectResponse(
-            ConnectResponse {
-                accepted: true,
-                address: [10, 0, 8, 1],
-            }
-        )
+        ConnectMessage::ConnectResponse(ConnectResponse {
+            accepted: true,
+            address: [10, 0, 8, 1],
+        })
     }
 }

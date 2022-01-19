@@ -1,5 +1,5 @@
 [package]
-name = "veronymous_client"
+name = "veronymous_router_client"
 version = "0.1.0"
 edition = "2021"
 

@@ -20,10 +20,6 @@ pub enum AgentError {
     #[error("IP error. {0}")]
     IpError(String),
 
-    /*
-    #[error("Wireguard error. {0}")]
-    WireguardError(String),*/
-
     #[error("Database error. {0}")]
     DBError(String),
 

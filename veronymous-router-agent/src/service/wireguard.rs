@@ -25,16 +25,13 @@ impl WireguardService {
                 .map_err(|err| {
                     AgentError::InitializationError(format!(
                         "Could not connect to wireguard server ({}). {:?}",
-                        config.address,
-                        err
+                        config.address, err
                     ))
                 })?;
 
             clients.push(client);
         }
-        Ok(Self {
-            clients
-        })
+        Ok(Self { clients })
     }
 
     pub async fn add_peer(
@@ -54,7 +51,7 @@ impl WireguardService {
         for client in self.clients.iter_mut() {
             match client.add_peer(tonic::Request::new(request.clone())).await {
                 Ok(_) => {}
-                Err(err) => error!("Could not add peer to wireguard server. {:?}", err)
+                Err(err) => error!("Could not add peer to wireguard server. {:?}", err),
             };
         }
 
@@ -67,9 +64,12 @@ impl WireguardService {
         let request = RemovePeerRequest { public_key };
 
         for client in self.clients.iter_mut() {
-            match client.remove_peer(tonic::Request::new(request.clone())).await {
+            match client
+                .remove_peer(tonic::Request::new(request.clone()))
+                .await
+            {
                 Ok(_) => {}
-                Err(err) => error!("Could not remove peer from wireguard server. {:?}", err)
+                Err(err) => error!("Could not remove peer from wireguard server. {:?}", err),
             };
         }
 

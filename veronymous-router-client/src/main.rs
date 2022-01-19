@@ -1,6 +1,8 @@
 use std::io::{Read, Write};
 use std::net::TcpStream;
-use veronymous_connection::model::{CONNECT_RESPONSE_SIZE, ConnectMessage, ConnectRequest, SerializableMessage};
+use veronymous_connection::model::{
+    ConnectMessage, ConnectRequest, SerializableMessage, CONNECT_RESPONSE_SIZE,
+};
 
 const ROUTER_ADDRESS: &str = "127.0.0.1:7777";
 
@@ -30,12 +32,10 @@ fn main() {
 }
 
 fn connect_request_message() -> ConnectMessage {
-    ConnectMessage::ConnectRequest(
-        ConnectRequest {
-            public_key: [
-                148, 59, 217, 215, 192, 60, 91, 222, 49, 113, 226, 92, 207, 79, 18, 57, 42, 23, 23,
-                8, 64, 149, 105, 64, 85, 86, 121, 15, 13, 212, 3, 65,
-            ],
-        }
-    )
+    ConnectMessage::ConnectRequest(ConnectRequest {
+        public_key: [
+            148, 59, 217, 215, 192, 60, 91, 222, 49, 113, 226, 92, 207, 79, 18, 57, 42, 23, 23, 8,
+            64, 149, 105, 64, 85, 86, 121, 15, 13, 212, 3, 65,
+        ],
+    })
 }

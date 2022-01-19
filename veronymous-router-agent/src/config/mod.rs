@@ -1,5 +1,5 @@
-use std::collections::HashSet;
 use crate::error::AgentError;
+use std::collections::HashSet;
 
 use config::{Config, File};
 use serde::Deserialize;
@@ -18,6 +18,8 @@ pub struct VeronymousAgentConfig {
     pub connections_redis_address: String,
 
     pub connections_state_redis_address: String,
+
+    pub private_addresses: HashSet<String>,
 }
 
 impl VeronymousAgentConfig {

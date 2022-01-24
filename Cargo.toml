@@ -10,5 +10,8 @@ authors = ["Noah Bouma"]
 members = [
     "veronymous-router-agent",
     "veronymous-connection",
-    "veronymous-router-client"
+    "veronymous-router-client",
+    "crypto/ps-signatures",
+    "crypto/commitments",
+    "crypto/common"
 ]

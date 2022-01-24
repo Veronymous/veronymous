@@ -8,7 +8,7 @@ private_addresses:
   - 10.8.0.2
   - 10.8.1.2
 
-epoch_length: 1
+epoch_length: 10
 
 connections_redis_address: redis://default:password@172.17.0.2:6379/1
 connections_state_redis_address: redis://default:password@172.17.0.2:6379/2

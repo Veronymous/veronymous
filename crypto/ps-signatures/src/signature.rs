@@ -5,13 +5,13 @@ use pairing_plus::bls12_381::Bls12;
 use pairing_plus::bls12_381::{Fr, G1};
 use pairing_plus::{CurveProjective, Engine};
 
+#[derive(Clone, Debug)]
 pub struct Signature {
     pub sigma_1: G1,
     pub sigma_2: G1,
 }
 
 impl Signature {
-    // TODO: Test each element
     pub fn verify(
         &self,
         messages: &[Fr],

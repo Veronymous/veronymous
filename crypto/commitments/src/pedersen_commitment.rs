@@ -72,7 +72,19 @@ impl Into<G1> for PedersenCommitment<G1> {
     }
 }
 
+impl Into<G1> for &PedersenCommitment<G1> {
+    fn into(self) -> G1 {
+        self.0
+    }
+}
+
 impl Into<G2> for PedersenCommitment<G2> {
+    fn into(self) -> G2 {
+        self.0
+    }
+}
+
+impl Into<G2> for &PedersenCommitment<G2> {
     fn into(self) -> G2 {
         self.0
     }

@@ -119,7 +119,7 @@ mod tests {
         }
 
         // Add the blinding factor
-        let blinding_factor = rand_non_zero_fr();
+        let blinding_factor = rand_non_zero_fr(&mut rng);
         committing.commit(*&params.g, blinding_factor.clone());
 
         // NOTE: Commitment proof-of-knowledge is outside the scope of this test
@@ -134,7 +134,7 @@ mod tests {
             &params,
             &mut rng,
         )
-            .unwrap();
+        .unwrap();
 
         // Unblind the signature
         let signature = BlindSignature::unblind(&blind_signature, &blinding_factor);

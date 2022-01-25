@@ -8,18 +8,17 @@ use ff_zeroize::{Field, PrimeField};
 use pairing_plus::bls12_381::Fr;
 use pairing_plus::hash_to_field::BaseFromRO;
 use pairing_plus::{CurveAffine, CurveProjective};
-use rand::thread_rng;
+use rand::CryptoRng;
 
 pub const FR_UNCOMPRESSED_SIZE: usize = 48;
 
-pub fn rand_non_zero_fr() -> Fr {
-    let mut rng = thread_rng();
-    let mut r = Fr::random(&mut rng);
+pub fn rand_non_zero_fr<R: CryptoRng + rand::RngCore>(rng: &mut R) -> Fr {
+    let mut r = Fr::random(rng);
     loop {
         if !r.is_zero() {
             return r;
         }
-        r = Fr::random(&mut rng);
+        r = Fr::random(rng);
     }
 }
 

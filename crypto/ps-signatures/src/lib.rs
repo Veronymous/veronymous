@@ -7,4 +7,5 @@ pub type Blinding = Fr;
 pub mod blind_signature;
 pub mod error;
 pub mod keys;
+pub mod pok_sig;
 pub mod signature;

@@ -11,8 +11,9 @@ members = [
     "veronymous-router-agent",
     "veronymous-connection",
     "veronymous-router-client",
-    "crypto/ps-signatures",
-    "crypto/bb-signatures",
-    "crypto/commitments",
-    "crypto/common"
+    "veronymous-token",
+    "veronymous-token/crypto/ps-signatures",
+    "veronymous-token/crypto/bb-signatures",
+    "veronymous-token/crypto/commitments",
+    "veronymous-token/crypto/common"
 ]

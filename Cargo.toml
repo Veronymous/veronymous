@@ -12,6 +12,7 @@ members = [
     "veronymous-connection",
     "veronymous-router-client",
     "crypto/ps-signatures",
+    "crypto/bb-signatures",
     "crypto/commitments",
     "crypto/common"
 ]

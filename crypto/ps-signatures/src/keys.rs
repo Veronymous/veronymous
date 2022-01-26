@@ -1,3 +1,4 @@
+use crypto_common::rand_non_zero_fr;
 use ff_zeroize::Field;
 use pairing_plus::bls12_381::Fr;
 use pairing_plus::bls12_381::{G1, G2};
@@ -9,12 +10,12 @@ use rand::CryptoRng;
 */
 
 #[derive(Clone, Debug)]
-pub struct Params {
+pub struct PsParams {
     pub g: G1,
     pub g_tilde: G2,
 }
 
-impl Params {
+impl PsParams {
     pub fn generate<C: CryptoRng + rand::RngCore>(rng: &mut C) -> Self {
         Self {
             g: G1::random(rng),
@@ -24,20 +25,20 @@ impl Params {
 }
 
 #[derive(Clone, Debug)]
-pub struct SigningKey {
+pub struct PsSigningKey {
     pub x: Fr,
     pub y: Vec<Fr>,
     pub x_cap: G1,
 }
 
-impl SigningKey {
+impl PsSigningKey {
     pub fn generate<C: CryptoRng + rand::RngCore>(
         message_count: usize,
-        params: &Params,
+        params: &PsParams,
         rng: &mut C,
     ) -> Self {
         // 1) Generate x
-        let x = Fr::random(rng);
+        let x = rand_non_zero_fr(rng);
 
         // 2) Generate y
         let mut y = Vec::with_capacity(message_count);
@@ -53,7 +54,7 @@ impl SigningKey {
         Self { x, y, x_cap }
     }
 
-    pub fn derive_public_key(&self, params: &Params) -> PublicKey {
+    pub fn derive_public_key(&self, params: &PsParams) -> PsPublicKey {
         // 1) Derive Y and Y-tilde X
         let mut y_cap = Vec::with_capacity(self.y.len());
         let mut y_cap_tilde = Vec::with_capacity(self.y.len());
@@ -73,7 +74,7 @@ impl SigningKey {
         let mut x_cap_tilde = params.g_tilde.clone();
         x_cap_tilde.mul_assign(self.x.clone());
 
-        PublicKey {
+        PsPublicKey {
             y_cap,
             x_cap_tilde,
             y_cap_tilde,
@@ -83,7 +84,7 @@ impl SigningKey {
 
 // For blind signature and verification
 #[derive(Clone, Debug)]
-pub struct PublicKey {
+pub struct PsPublicKey {
     pub y_cap: Vec<G1>,
     pub x_cap_tilde: G2,
     pub y_cap_tilde: Vec<G2>,
@@ -91,15 +92,15 @@ pub struct PublicKey {
 
 #[cfg(test)]
 mod tests {
-    use crate::keys::{Params, SigningKey};
+    use crate::keys::{PsParams, PsSigningKey};
 
     #[test]
     fn generate_key_pair_test() {
         let mut rng = rand::thread_rng();
 
-        let params = Params::generate(&mut rng);
+        let params = PsParams::generate(&mut rng);
 
-        let signing_key = SigningKey::generate(5, &params, &mut rng);
+        let signing_key = PsSigningKey::generate(5, &params, &mut rng);
 
         let _public_key = signing_key.derive_public_key(&params);
     }

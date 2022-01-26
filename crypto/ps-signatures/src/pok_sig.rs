@@ -1,7 +1,5 @@
-use crate::keys::{Params, PublicKey};
-use crate::signature::Signature;
-use commitments::pedersen_commitment::PedersenCommitmentCommitting;
-use commitments::pok_pedersen_commitment::ProverCommitting;
+use crate::keys::{PsParams, PsPublicKey};
+use crate::signature::PsSignature;
 use ff_zeroize::Field;
 use pairing_plus::bls12_381::{Bls12, Fr, G1, G2};
 use pairing_plus::{CurveProjective, Engine};
@@ -12,15 +10,15 @@ use rand::CryptoRng;
 * Note: Payload proof outside the scope of this module
 */
 #[derive(Clone, Debug)]
-pub struct PokOfSignatureProof {
+pub struct PsPokOfSignatureProof {
     pub sigma_1: G1,
     pub sigma_2: G1,
 }
 
-impl PokOfSignatureProof {
+impl PsPokOfSignatureProof {
     // Create signature proof of knowledge
     pub fn new<R: CryptoRng + rand::RngCore>(
-        signature: &Signature,
+        signature: &PsSignature,
         blinding_t: Option<Fr>,
         rng: &mut R,
     ) -> Self {
@@ -51,15 +49,15 @@ impl PokOfSignatureProof {
 
     pub fn verify(
         &self,
-        public_key: &PublicKey,
-        params: &Params,
+        public_key: &PsPublicKey,
+        params: &PsParams,
         payload_commitment: impl Into<G2>,
     ) -> bool {
         // Pairing 1 = e(sigma_1, X_tilde + (Y_prime ^ m_0..m_i))
         let mut pairing_1_point_2 = payload_commitment.into();
         pairing_1_point_2.add_assign(&public_key.x_cap_tilde);
 
-        let mut pairing_1 = Bls12::pairing(self.sigma_1, pairing_1_point_2);
+        let pairing_1 = Bls12::pairing(self.sigma_1, pairing_1_point_2);
 
         // Pairing 2 = e(sigma_2, g_tilde)
         let pairing_2 = Bls12::pairing(self.sigma_2, params.g_tilde);
@@ -70,10 +68,10 @@ impl PokOfSignatureProof {
 
 #[cfg(test)]
 mod tests {
-    use crate::blind_signature::BlindSignature;
-    use crate::keys::{Params, PublicKey, SigningKey};
-    use crate::pok_sig::PokOfSignatureProof;
-    use crate::signature::Signature;
+    use crate::blind_signature::PsBlindSignature;
+    use crate::keys::{PsParams, PsPublicKey, PsSigningKey};
+    use crate::pok_sig::PsPokOfSignatureProof;
+    use crate::signature::PsSignature;
     use commitments::pedersen_commitment::PedersenCommitmentCommitting;
     use crypto_common::rand_non_zero_fr;
     use ff_zeroize::Field;
@@ -104,7 +102,7 @@ mod tests {
         let payload_commitment = payload_committing.finish();
 
         // 5) Create PokOfSignatureProof
-        let signature_proof = PokOfSignatureProof::new(&signature, Some(blinding_t), &mut rng);
+        let signature_proof = PsPokOfSignatureProof::new(&signature, Some(blinding_t), &mut rng);
 
         let verification_result = signature_proof.verify(&public_key, &params, &payload_commitment);
 
@@ -129,12 +127,12 @@ mod tests {
         assert_eq!(false, verification_result);
     }
 
-    fn gen_signature_values() -> (PublicKey, Params, Signature, Vec<Fr>) {
+    fn gen_signature_values() -> (PsPublicKey, PsParams, PsSignature, Vec<Fr>) {
         // Setup
         let mut rng = thread_rng();
 
-        let params = Params::generate(&mut rng);
-        let signing_key = SigningKey::generate(5, &params, &mut rng);
+        let params = PsParams::generate(&mut rng);
+        let signing_key = PsSigningKey::generate(5, &params, &mut rng);
         let public_key = signing_key.derive_public_key(&params);
 
         let hidden_messages = vec![Fr::random(&mut rng), Fr::random(&mut rng)];
@@ -162,7 +160,7 @@ mod tests {
         let hidden_messages_commitment = committing.finish();
 
         // Blind sign
-        let blind_signature: Signature = BlindSignature::new(
+        let blind_signature: PsSignature = PsBlindSignature::new(
             hidden_messages_commitment,
             &revealed_messages,
             &signing_key,
@@ -173,7 +171,7 @@ mod tests {
         .unwrap();
 
         // Unblind the signature
-        let signature = BlindSignature::unblind(&blind_signature, &blinding_factor);
+        let signature = PsBlindSignature::unblind(&blind_signature, &blinding_factor);
 
         // Verify the signature
         let mut all_messages = vec![];

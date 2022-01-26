@@ -1,22 +1,22 @@
 use crate::error::PsSignatureError;
-use crate::keys::{Params, PublicKey};
+use crate::keys::{PsParams, PsPublicKey};
 use crypto_common::multi_scalar_mul_const_time;
 use pairing_plus::bls12_381::Bls12;
 use pairing_plus::bls12_381::{Fr, G1};
 use pairing_plus::{CurveProjective, Engine};
 
 #[derive(Clone, Debug)]
-pub struct Signature {
+pub struct PsSignature {
     pub sigma_1: G1,
     pub sigma_2: G1,
 }
 
-impl Signature {
+impl PsSignature {
     pub fn verify(
         &self,
         messages: &[Fr],
-        public_key: &PublicKey,
-        params: &Params,
+        public_key: &PsPublicKey,
+        params: &PsParams,
     ) -> Result<bool, PsSignatureError> {
         // 1) Check the initial parameters
         Self::check_verification_params(messages, public_key)?;
@@ -43,7 +43,7 @@ impl Signature {
 
     fn check_verification_params(
         messages: &[Fr],
-        public_key: &PublicKey,
+        public_key: &PsPublicKey,
     ) -> Result<(), PsSignatureError> {
         if messages.len() != public_key.y_cap_tilde.len() {
             return Err(PsSignatureError::InvalidArgumentError(format!(

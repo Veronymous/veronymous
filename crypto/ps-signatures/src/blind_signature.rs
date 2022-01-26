@@ -1,24 +1,24 @@
 use crate::error::PsSignatureError;
-use crate::keys::{Params, PublicKey, SigningKey};
-use crate::signature::Signature;
+use crate::keys::{PsParams, PsPublicKey, PsSigningKey};
+use crate::signature::PsSignature;
 use commitments::pedersen_commitment::PedersenCommitmentCommitting;
 use ff_zeroize::Field;
 use pairing_plus::bls12_381::{Fr, G1};
 use pairing_plus::CurveProjective;
 use rand::CryptoRng;
 
-pub struct BlindSignature {}
+pub struct PsBlindSignature {}
 
-impl BlindSignature {
+impl PsBlindSignature {
     // Note: Hidden messages are not verified by this function
     pub fn new<R: CryptoRng + rand::RngCore>(
         commitment: impl Into<G1>,
         messages: &[Fr],
-        signing_key: &SigningKey,
-        public_key: &PublicKey,
-        params: &Params,
+        signing_key: &PsSigningKey,
+        public_key: &PsPublicKey,
+        params: &PsParams,
         rng: &mut R,
-    ) -> Result<Signature, PsSignatureError> {
+    ) -> Result<PsSignature, PsSignatureError> {
         // Initial validation
         if messages.len() > public_key.y_cap.len() {
             return Err(PsSignatureError::InvalidArgumentError(format!(
@@ -43,10 +43,10 @@ impl BlindSignature {
         sigma_2.add_assign(&commitment);
         sigma_2.mul_assign(u);
 
-        Ok(Signature { sigma_1, sigma_2 })
+        Ok(PsSignature { sigma_1, sigma_2 })
     }
 
-    pub fn unblind(signature: &Signature, blinding: &Fr) -> Signature {
+    pub fn unblind(signature: &PsSignature, blinding: &Fr) -> PsSignature {
         // signature = (sigma_1, sigma_2 / (sigma_1 ^ t))
         let mut sigma_1_t = signature.sigma_1;
         sigma_1_t.mul_assign(*blinding);
@@ -54,7 +54,7 @@ impl BlindSignature {
         let mut sigma_2 = signature.sigma_2;
         sigma_2.sub_assign(&sigma_1_t);
 
-        Signature {
+        PsSignature {
             sigma_1: signature.sigma_1,
             sigma_2,
         }
@@ -63,7 +63,7 @@ impl BlindSignature {
     fn add_messages_to_commitment(
         hidden_messages: &mut G1,
         messages: &[Fr],
-        public_key: &PublicKey,
+        public_key: &PsPublicKey,
     ) -> Result<(), PsSignatureError> {
         let offset = public_key.y_cap.len() - messages.len();
 
@@ -83,9 +83,9 @@ impl BlindSignature {
 
 #[cfg(test)]
 mod tests {
-    use crate::blind_signature::BlindSignature;
-    use crate::keys::{Params, SigningKey};
-    use crate::signature::Signature;
+    use crate::blind_signature::PsBlindSignature;
+    use crate::keys::{PsParams, PsSigningKey};
+    use crate::signature::PsSignature;
     use commitments::pedersen_commitment::PedersenCommitmentCommitting;
     use crypto_common::rand_non_zero_fr;
     use ff_zeroize::Field;
@@ -97,8 +97,8 @@ mod tests {
         // Setup
         let mut rng = thread_rng();
 
-        let params = Params::generate(&mut rng);
-        let signing_key = SigningKey::generate(5, &params, &mut rng);
+        let params = PsParams::generate(&mut rng);
+        let signing_key = PsSigningKey::generate(5, &params, &mut rng);
         let public_key = signing_key.derive_public_key(&params);
 
         let hidden_messages = vec![Fr::random(&mut rng), Fr::random(&mut rng)];
@@ -126,7 +126,7 @@ mod tests {
         let hidden_messages_commitment = committing.finish();
 
         // Blind sign
-        let blind_signature: Signature = BlindSignature::new(
+        let blind_signature: PsSignature = PsBlindSignature::new(
             hidden_messages_commitment,
             &revealed_messages,
             &signing_key,
@@ -137,7 +137,7 @@ mod tests {
         .unwrap();
 
         // Unblind the signature
-        let signature = BlindSignature::unblind(&blind_signature, &blinding_factor);
+        let signature = PsBlindSignature::unblind(&blind_signature, &blinding_factor);
 
         // Verify the signature
         let mut all_messages = vec![];
@@ -168,7 +168,4 @@ mod tests {
             .unwrap();
         assert_eq!(false, verification_result);
     }
-
-    #[test]
-    fn test_g1() {}
 }

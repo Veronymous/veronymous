@@ -1,5 +1,5 @@
 [package]
-name = "bb-signatures"
+name = "bb_signatures"
 version = "0.1.0"
 edition = "2021"
 

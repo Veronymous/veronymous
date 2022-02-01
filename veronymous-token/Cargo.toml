@@ -6,3 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+blake2 = "0.8"
+pairing-plus = "0.19"
+rand = "0.7"
+ff-zeroize = "0.6"
+thiserror = "1.0.30"
+crypto_common = { path = "./crypto/common" }
+commitments = { path = "./crypto/commitments" }
+ps_signatures = { path = "./crypto/ps-signatures" }

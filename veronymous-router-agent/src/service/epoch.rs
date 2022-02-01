@@ -22,16 +22,6 @@ impl EpochService {
         Duration::from_secs(self.epoch_length)
     }
 
-    /*
-    pub fn time_until_next_epoch(&self) -> Duration {
-        let now = SystemTime::now();
-        let now = now.duration_since(UNIX_EPOCH).unwrap().as_secs();
-
-        let next_epoch = self.next_epoch(now);
-
-        Duration::from_secs(next_epoch - now)
-    }*/
-
     pub fn next_epoch(&self) -> Instant {
         let now = SystemTime::now();
         let now_instant = Instant::now();

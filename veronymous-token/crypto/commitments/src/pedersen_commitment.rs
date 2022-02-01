@@ -3,10 +3,11 @@
 * C = g_1 ^ m_1 * g_2 ^ m_2 ... g_i ^ m_i
 */
 
-use crate::error::CommitmentError;
 use crypto_common::multi_scalar_mul_const_time;
 use pairing_plus::bls12_381::{Fr, G1, G2};
 use pairing_plus::CurveProjective;
+
+use crate::error::CommitmentError;
 
 pub type RandomFactor = Fr;
 

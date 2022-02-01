@@ -99,9 +99,9 @@ impl<C: CurveProjective + SerDes> ProverCommitted<C> {
 
 #[derive(Clone, Debug)]
 pub struct CommitmentProof<C: CurveProjective + SerDes> {
-    pub commitment: C,
     // Randomness commitment
     pub responses: Vec<Fr>,
+    pub commitment: C,
 }
 
 impl<C: CurveProjective + SerDes> CommitmentProof<C> {

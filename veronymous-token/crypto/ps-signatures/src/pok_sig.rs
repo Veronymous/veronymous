@@ -9,7 +9,7 @@ use rand::CryptoRng;
 * Signature proof of knowledge.
 * Note: Payload proof outside the scope of this module
 */
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct PsPokOfSignatureProof {
     pub sigma_1: G1,
     pub sigma_2: G1,

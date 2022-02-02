@@ -16,4 +16,7 @@ pub enum VeronymousTokenError {
 
     #[error("Signing error. {0}")]
     SigningError(String),
+
+    #[error("Deserialization error. {0}")]
+    DeserializationError(String),
 }

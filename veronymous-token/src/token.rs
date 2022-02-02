@@ -1,5 +1,7 @@
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::io::Cursor;
 use crate::error::VeronymousTokenError;
+use crate::error::VeronymousTokenError::DeserializationError;
+use crate::serde::Serializable;
 use commitments::pedersen_commitment::PedersenCommitment;
 use commitments::pok_pedersen_commitment::CommitmentProof;
 use crypto_common::hash_to_fr;
@@ -9,10 +11,14 @@ use pairing_plus::hash_to_field::ExpandMsgXmd;
 use pairing_plus::serdes::SerDes;
 use ps_signatures::keys::{PsParams, PsPublicKey};
 use ps_signatures::pok_sig::PsPokOfSignatureProof;
+use std::time::{SystemTime, UNIX_EPOCH};
+use crate::utils::{read_fr, read_g1_point, read_g2_point};
 
 const DST: &[u8] = b"BLS12381G2_XMD:BLAKE2B_SERIAL_NUMBER_GENERATOR:1_0_0";
 
-#[derive(Clone, Debug)]
+const SERIALIZED_TOKEN_SIZE: usize = 544;
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct ProofRootToken {
     pub root: PedersenCommitment<G2>,
 
@@ -21,14 +27,14 @@ pub struct ProofRootToken {
     pub blinding_response: Fr,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ProofSerialNumber {
     pub serial_number: G2,
 
     pub randomness_commitment: G2,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct VeronymousToken {
     // Hidden root token
     pub root: ProofRootToken,
@@ -133,6 +139,86 @@ impl VeronymousToken {
         }
 
         Ok(true)
+    }
+}
+
+impl Serializable for VeronymousToken {
+    fn serialize(&self) -> Vec<u8> {
+        // TODO: Vec with capacity
+        let mut bytes = Vec::with_capacity(SERIALIZED_TOKEN_SIZE);
+
+        self.root.root.0.serialize(&mut bytes, true).unwrap();
+        self.root
+            .randomness_commitment
+            .serialize(&mut bytes, true)
+            .unwrap();
+        self.root
+            .blinding_response
+            .serialize(&mut bytes, true)
+            .unwrap();
+
+        self.root_signature
+            .sigma_1
+            .serialize(&mut bytes, true)
+            .unwrap();
+        self.root_signature
+            .sigma_2
+            .serialize(&mut bytes, true)
+            .unwrap();
+
+        self.serial_number
+            .serial_number
+            .serialize(&mut bytes, true)
+            .unwrap();
+        self.serial_number
+            .randomness_commitment
+            .serialize(&mut bytes, true)
+            .unwrap();
+
+        self.root_token_response
+            .serialize(&mut bytes, true)
+            .unwrap();
+
+        bytes
+    }
+
+    fn deserialize(bytes: &[u8]) -> Result<Self, VeronymousTokenError>
+        where
+            Self: Sized,
+    {
+        if bytes.len() != SERIALIZED_TOKEN_SIZE {
+            return Err(DeserializationError(format!(
+                "Serialized token must have {} bytes",
+                SERIALIZED_TOKEN_SIZE
+            )));
+        }
+
+        let mut cursor = Cursor::new(bytes);
+
+        let root = ProofRootToken {
+            root: PedersenCommitment(read_g2_point(&mut cursor)?),
+            randomness_commitment: read_g2_point(&mut cursor)?,
+            blinding_response: read_fr(&mut cursor)?,
+        };
+
+        let root_signature = PsPokOfSignatureProof {
+            sigma_1: read_g1_point(&mut cursor)?,
+            sigma_2: read_g1_point(&mut cursor)?,
+        };
+
+        let serial_number = ProofSerialNumber {
+            serial_number: read_g2_point(&mut cursor)?,
+            randomness_commitment: read_g2_point(&mut cursor)?,
+        };
+
+        let root_token_response = read_fr(&mut cursor)?;
+
+        Ok(Self {
+            root,
+            root_signature,
+            serial_number,
+            root_token_response,
+        })
     }
 }
 

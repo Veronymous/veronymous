@@ -50,7 +50,7 @@ impl<C: CurveProjective> PedersenCommitmentCommitting<C> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PedersenCommitment<C: CurveProjective>(pub C);
 
 impl<C: CurveProjective> PedersenCommitment<C> {

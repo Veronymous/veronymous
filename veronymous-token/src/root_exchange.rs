@@ -1,3 +1,9 @@
+use crate::error::VeronymousTokenError;
+use crate::error::VeronymousTokenError::DeserializationError;
+use crate::root::RootVeronymousToken;
+use crate::serde::Serializable;
+use crate::utils::{read_fr, read_g1_point};
+use crate::{RootTokenId, TokenBlinding};
 use commitments::pedersen_commitment::PedersenCommitmentCommitting;
 use commitments::pok_pedersen_commitment::{CommitmentProof, ProverCommitting};
 use crypto_common::hash_to_fr;
@@ -7,11 +13,12 @@ use ps_signatures::blind_signature::PsBlindSignature;
 use ps_signatures::keys::{PsParams, PsPublicKey, PsSigningKey};
 use ps_signatures::signature::PsSignature;
 use rand::CryptoRng;
-use crate::error::VeronymousTokenError;
-use crate::root::RootVeronymousToken;
-use crate::{RootTokenId, TokenBlinding};
+use std::io::Cursor;
 
-#[derive(Clone, Debug)]
+const SERIALIZED_TOKEN_REQUEST_SIZE: usize = 160;
+const SERIALIZED_TOKEN_RESPONSE_SIZE: usize = 96;
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct RootTokenRequest {
     pub token_id_commitment: G1,
 
@@ -58,9 +65,82 @@ impl RootTokenRequest {
     }
 }
 
-#[derive(Clone, Debug)]
+impl Serializable for RootTokenRequest {
+    fn serialize(&self) -> Vec<u8> {
+        let mut bytes = Vec::with_capacity(SERIALIZED_TOKEN_REQUEST_SIZE);
+
+        self.token_id_commitment
+            .serialize(&mut bytes, true)
+            .unwrap();
+        self.randomness_commitment
+            .serialize(&mut bytes, true)
+            .unwrap();
+        self.token_id_response.serialize(&mut bytes, true).unwrap();
+        self.blinding_factor_response
+            .serialize(&mut bytes, true)
+            .unwrap();
+
+        bytes
+    }
+
+    fn deserialize(bytes: &[u8]) -> Result<Self, VeronymousTokenError> {
+        if bytes.len() != SERIALIZED_TOKEN_REQUEST_SIZE {
+            return Err(DeserializationError(format!(
+                "Serialized token request must have {} bytes",
+                SERIALIZED_TOKEN_REQUEST_SIZE
+            )));
+        }
+        let mut cursor = Cursor::new(bytes);
+
+        let token_id_commitment = read_g1_point(&mut cursor)?;
+        let randomness_commitment = read_g1_point(&mut cursor)?;
+        let token_id_response = read_fr(&mut cursor)?;
+        let blinding_factor_response = read_fr(&mut cursor)?;
+
+        Ok(Self {
+            token_id_commitment,
+            randomness_commitment,
+            token_id_response,
+            blinding_factor_response,
+        })
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct RootTokenResponse {
     pub signature: PsSignature,
+}
+
+impl Serializable for RootTokenResponse {
+    fn serialize(&self) -> Vec<u8> {
+        let mut bytes = Vec::with_capacity(SERIALIZED_TOKEN_RESPONSE_SIZE);
+
+        self.signature.sigma_1.serialize(&mut bytes, true).unwrap();
+        self.signature.sigma_2.serialize(&mut bytes, true).unwrap();
+
+        bytes
+    }
+
+    fn deserialize(bytes: &[u8]) -> Result<Self, VeronymousTokenError>
+    where
+        Self: Sized,
+    {
+        if bytes.len() != SERIALIZED_TOKEN_RESPONSE_SIZE {
+            return Err(DeserializationError(format!(
+                "Serialized token response must have {} bytes",
+                SERIALIZED_TOKEN_RESPONSE_SIZE
+            )));
+        }
+
+        let mut cursor = Cursor::new(bytes);
+
+        let sigma_1 = read_g1_point(&mut cursor)?;
+        let sigma_2 = read_g1_point(&mut cursor)?;
+
+        Ok(Self {
+            signature: PsSignature { sigma_1, sigma_2 },
+        })
+    }
 }
 
 pub fn create_root_token_request(
@@ -142,7 +222,7 @@ pub fn issue_root_token<R: CryptoRng + rand::RngCore>(
         &params,
         rng,
     )
-        .map_err(|e| VeronymousTokenError::SigningError(format!("Could not sign token. {:?}", e)))?;
+    .map_err(|e| VeronymousTokenError::SigningError(format!("Could not sign token. {:?}", e)))?;
 
     Ok(RootTokenResponse {
         signature: blind_signature,
@@ -177,7 +257,13 @@ pub fn complete_root_token(
 #[cfg(test)]
 mod tests {
     use crate::issuer::TokenIssuer;
-    use crate::root_exchange::{complete_root_token, create_root_token_request, issue_root_token};
+    use crate::root::RootVeronymousToken;
+    use crate::root_exchange::{
+        complete_root_token, create_root_token_request, issue_root_token, RootTokenRequest,
+        RootTokenResponse,
+    };
+    use crate::serde::Serializable;
+    use crate::token::VeronymousToken;
     use crypto_common::rand_non_zero_fr;
     use ff_zeroize::Field;
     use pairing_plus::bls12_381::Fr;
@@ -197,6 +283,12 @@ mod tests {
             create_root_token_request(&token_id, &blinding, &issuer.public_key, &issuer.params)
                 .unwrap();
 
+        // Serialize de serialize
+        let token_request_serialized = token_request.serialize();
+        let token_request_deserialized =
+            RootTokenRequest::deserialize(&token_request_serialized).unwrap();
+        assert_eq!(token_request, token_request_deserialized);
+
         // Verify the token request
         let verification_result = token_request
             .verify(&issuer.public_key, &issuer.params)
@@ -211,7 +303,13 @@ mod tests {
             &issuer.params,
             &mut rng,
         )
-            .unwrap();
+        .unwrap();
+
+        // Serialize and deserialize
+        let token_response_serialized = token_response.serialize();
+        let token_response_deserialized =
+            RootTokenResponse::deserialize(&token_response_serialized).unwrap();
+        assert_eq!(token_response, token_response_deserialized);
 
         let mut root_token = complete_root_token(
             &token_response,
@@ -220,7 +318,12 @@ mod tests {
             &issuer.public_key,
             &issuer.params,
         )
-            .unwrap();
+        .unwrap();
+
+        let root_token_serialized = root_token.serialize();
+        let root_token_deserialized =
+            RootVeronymousToken::deserialize(&root_token_serialized).unwrap();
+        assert_eq!(root_token, root_token_deserialized);
 
         // Veronymous token
         let domain = "test".as_bytes();
@@ -252,6 +355,11 @@ mod tests {
         let veronymous_token = root_token
             .derive_token(domain, now, &issuer.public_key, &issuer.params, &mut rng)
             .unwrap();
+
+        let veronymous_token_serialized = veronymous_token.serialize();
+        let veronymous_token_deserialized =
+            VeronymousToken::deserialize(&veronymous_token_serialized).unwrap();
+        assert_eq!(veronymous_token, veronymous_token_deserialized);
 
         let result = veronymous_token
             .verify(domain, now, &issuer.public_key, &issuer.params)

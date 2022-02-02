@@ -1,8 +1,10 @@
 use crate::error::VeronymousTokenError;
-use crate::error::VeronymousTokenError::ProofError;
+use crate::error::VeronymousTokenError::{DeserializationError, ProofError};
+use crate::serde::Serializable;
 use crate::token::{
     compute_serial_number_generator, ProofRootToken, ProofSerialNumber, VeronymousToken,
 };
+use crate::utils::{read_fr, read_g1_point};
 use commitments::pedersen_commitment::PedersenCommitmentCommitting;
 use commitments::pok_pedersen_commitment::ProverCommitting;
 use crypto_common::{hash_to_fr, rand_non_zero_fr};
@@ -13,9 +15,11 @@ use ps_signatures::keys::{PsParams, PsPublicKey};
 use ps_signatures::pok_sig::PsPokOfSignatureProof;
 use ps_signatures::signature::PsSignature;
 use rand::CryptoRng;
+use std::io::Cursor;
 
-// TODO: Expiration
-#[derive(Clone, Debug)]
+const SERIALIZED_ROOT_TOKEN_SIZE: usize = 128;
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct RootVeronymousToken {
     pub token_id: Fr,
 
@@ -145,5 +149,42 @@ impl RootVeronymousToken {
         serial_number.mul_assign(self.token_id.clone());
 
         serial_number
+    }
+}
+
+impl Serializable for RootVeronymousToken {
+    fn serialize(&self) -> Vec<u8> {
+        // TODO: With capacity
+        let mut bytes = Vec::with_capacity(SERIALIZED_ROOT_TOKEN_SIZE);
+        self.token_id.serialize(&mut bytes, true).unwrap();
+        self.signature.sigma_1.serialize(&mut bytes, true).unwrap();
+        self.signature.sigma_2.serialize(&mut bytes, true).unwrap();
+
+        bytes
+    }
+
+    fn deserialize(bytes: &[u8]) -> Result<Self, VeronymousTokenError>
+    where
+        Self: Sized,
+    {
+        if bytes.len() != SERIALIZED_ROOT_TOKEN_SIZE {
+            return Err(DeserializationError(format!(
+                "Serialized token must have {} bytes.",
+                SERIALIZED_ROOT_TOKEN_SIZE
+            )));
+        }
+
+        let mut cursor = Cursor::new(bytes);
+
+        let token_id = read_fr(&mut cursor)?;
+        let signature = PsSignature {
+            sigma_1: read_g1_point(&mut cursor)?,
+            sigma_2: read_g1_point(&mut cursor)?,
+        };
+
+        Ok(Self {
+            token_id,
+            signature,
+        })
     }
 }

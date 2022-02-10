@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package veronymous_token_service;
+
+service VeronymousTokenService {
+  rpc IssueToken(TokenRequest) returns (TokenResponse);
+}
+
+message TokenRequest {
+  bytes token_request = 1;
+}
+
+message TokenResponse {
+  bytes token_response = 1;
+}

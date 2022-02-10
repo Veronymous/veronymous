@@ -1,0 +1,7 @@
+host: 127.0.0.1
+port: 50051
+
+key_file: keys.db
+# Key lifetime in minutes
+# 12 Hours
+key_lifetime: 720

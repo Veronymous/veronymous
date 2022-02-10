@@ -11,5 +11,6 @@ pairing-plus = "0.19"
 rand = "0.7"
 ff-zeroize = "0.6"
 thiserror = "1.0.30"
+byteorder = "1.4.3"
 crypto_common = { path = "../common" }
 commitments = { path = "../commitments"}

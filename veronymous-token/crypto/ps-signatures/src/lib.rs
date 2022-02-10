@@ -8,4 +8,5 @@ pub mod blind_signature;
 pub mod error;
 pub mod keys;
 pub mod pok_sig;
+pub mod serde;
 pub mod signature;

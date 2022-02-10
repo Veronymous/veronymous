@@ -7,4 +7,10 @@ pub enum PsSignatureError {
 
     #[error("Signing error. {0}")]
     SigningError(String),
+
+    #[error("Serialization error. {0}")]
+    SerializationError(String),
+
+    #[error("Deserialization error. {0}")]
+    DeserializationError(String),
 }

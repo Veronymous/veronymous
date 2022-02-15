@@ -4,6 +4,8 @@ package veronymous_token_info_service;
 
 service VeronymousTokenInfoService {
   rpc GetTokenInfo(TokenInfoRequest) returns (TokenInfo);
+
+  rpc GetNextTokenInfo(TokenInfoRequest) returns (TokenInfo);
 }
 
 message TokenInfoRequest {}

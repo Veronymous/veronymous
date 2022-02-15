@@ -31,8 +31,8 @@ impl TokenService {
         // Get the signing key
         let kms = self.kms.lock().unwrap();
 
-        let signing_key = kms.get_signing_key();
-        let (key_params, public_key) = kms.get_public_key();
+        let signing_key = kms.get_current_signing_key();
+        let (key_params, public_key) = kms.get_current_public_key();
 
         let mut rng = thread_rng();
 

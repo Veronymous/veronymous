@@ -25,4 +25,10 @@ pub enum AgentError {
 
     #[error("Parsing error. {0}")]
     ParsingError(String),
+
+    #[error("Service error. {0}")]
+    ServiceError(String),
+
+    #[error("Deserialization error. {0}")]
+    DeserializationError(String),
 }

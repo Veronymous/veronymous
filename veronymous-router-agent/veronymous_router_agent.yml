@@ -3,6 +3,8 @@ address: 127.0.0.1:7777
 wg_addresses:
   - http://nbouma-vm:50051
 
+token_info_endpoint: http://127.0.0.1:50051
+
 # Private address ranges
 private_addresses:
   - 10.8.0.2

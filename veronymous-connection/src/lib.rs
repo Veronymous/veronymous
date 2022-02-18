@@ -1,4 +1,2 @@
-mod error;
-//mod handler;
+pub mod error;
 pub mod model;
-//pub mod protocol;

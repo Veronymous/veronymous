@@ -10,4 +10,7 @@ pub enum ConnectionError {
 
     #[error("Bad request. {0}")]
     BadRequestError(String),
+
+    #[error("Verification error. {0}")]
+    VerificationError(String),
 }

@@ -13,6 +13,8 @@ pub struct VeronymousAgentConfig {
 
     pub wg_addresses: HashSet<String>,
 
+    pub token_info_endpoint: String,
+
     pub epoch_length: u64,
 
     pub connections_redis_address: String,

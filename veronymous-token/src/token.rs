@@ -1,7 +1,7 @@
-use std::io::Cursor;
 use crate::error::VeronymousTokenError;
 use crate::error::VeronymousTokenError::DeserializationError;
 use crate::serde::Serializable;
+use crate::utils::{read_fr, read_g1_point, read_g2_point};
 use commitments::pedersen_commitment::PedersenCommitment;
 use commitments::pok_pedersen_commitment::CommitmentProof;
 use crypto_common::hash_to_fr;
@@ -11,8 +11,8 @@ use pairing_plus::hash_to_field::ExpandMsgXmd;
 use pairing_plus::serdes::SerDes;
 use ps_signatures::keys::{PsParams, PsPublicKey};
 use ps_signatures::pok_sig::PsPokOfSignatureProof;
+use std::io::Cursor;
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::utils::{read_fr, read_g1_point, read_g2_point};
 
 const DST: &[u8] = b"BLS12381G2_XMD:BLAKE2B_SERIAL_NUMBER_GENERATOR:1_0_0";
 
@@ -183,8 +183,8 @@ impl Serializable for VeronymousToken {
     }
 
     fn deserialize(bytes: &[u8]) -> Result<Self, VeronymousTokenError>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         if bytes.len() != SERIALIZED_TOKEN_SIZE {
             return Err(DeserializationError(format!(

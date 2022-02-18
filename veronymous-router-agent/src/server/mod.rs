@@ -79,6 +79,7 @@ impl VeronymousRouterAgentServer {
      * TODO: Figure out a way to make this seamless (buffer)
      * TODO: Might want to put this in one of the services.
      * TODO: Add epoch sync?
+     * TODO: Add this in the connections service
      */
     async fn schedule_connection_cleaner(&self) {
         info!("Scheduling connection cleaner...");

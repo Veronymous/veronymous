@@ -11,10 +11,11 @@ serde = { version = "^1.0", features = ["derive"] }
 log = "0.4.14"
 env_logger = "0.9.0"
 thiserror = "1.0.30"
+ps_signatures = { path = "../veronymous-token/crypto/ps-signatures" }
+veronymous_token = { path = "../veronymous-token" }
 
 # Might not need actix-rt
 [dev-dependencies]
-#async-std = "1.10.0"
-#actix-rt = "2.5.0"
 base64 = "0.13.0"
-#tokio = { version = "1.15.0", features = ["macros", "rt", "rt-multi-thread"] }
+rand = "0.7"
+crypto_common = { path = "../veronymous-token/crypto/common" }

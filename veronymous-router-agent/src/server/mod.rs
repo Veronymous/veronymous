@@ -1,10 +1,11 @@
-use crate::service::epoch::EpochService;
 use crate::service::router::VeronymousRouterAgentService;
 use crate::{AgentError, VeronymousAgentConfig};
 use std::sync::Arc;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::io::AsyncReadExt;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::Mutex;
+use tokio::time::Instant;
 use veronymous_connection::model::{ConnectMessage, SerializableMessage, CONNECT_REQUEST_SIZE};
 
 // TODO: Review shared state - https://tokio.rs/tokio/tutorial/shared-state
@@ -20,7 +21,7 @@ pub struct VeronymousRouterAgentServer {
 
     service: RouterService,
 
-    epoch_service: EpochService,
+    epoch_length: u64,
 }
 
 impl VeronymousRouterAgentServer {
@@ -32,7 +33,7 @@ impl VeronymousRouterAgentServer {
             service: Arc::new(Mutex::new(
                 VeronymousRouterAgentService::create(&config).await?,
             )),
-            epoch_service: EpochService::create(&config),
+            epoch_length: config.epoch_length * 60,
         })
     }
 
@@ -84,8 +85,9 @@ impl VeronymousRouterAgentServer {
     async fn schedule_connection_cleaner(&self) {
         info!("Scheduling connection cleaner...");
 
-        let next_epoch = self.epoch_service.next_epoch();
-        let epoch_duration = self.epoch_service.epoch_duration();
+        //let next_epoch = self.epoch_service.next_epoch();
+        let next_epoch = self.next_epoch();
+        let epoch_duration = Duration::from_secs(self.epoch_length);
 
         info!("Next epoch: {:?}", next_epoch);
         info!("Epoch duration: {}s", epoch_duration.as_secs());
@@ -169,5 +171,20 @@ impl VeronymousRouterAgentServer {
         })?;
 
         Ok((n, buffer))
+    }
+
+    pub fn next_epoch(&self) -> Instant {
+        let now = SystemTime::now();
+        let now_instant = Instant::now();
+
+        let now = now.duration_since(UNIX_EPOCH).unwrap().as_secs();
+
+        // Get the current epoch start
+        let current_epoch = now - (now % self.epoch_length);
+        let next_epoch = current_epoch + self.epoch_length;
+
+        let time_until_next_epoch = next_epoch - now;
+
+        now_instant + Duration::from_secs(time_until_next_epoch)
     }
 }

@@ -11,8 +11,6 @@ use tonic::transport::{Channel, Endpoint};
 
 const UPDATE_INTERVAL: u64 = 3;
 
-pub const TOKEN_DOMAIN: &[u8; 25] = b"veronymous-router-service";
-
 // TODO: Support buffer
 // Use rwlock?
 pub struct TokenService {

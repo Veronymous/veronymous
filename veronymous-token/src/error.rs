@@ -19,4 +19,7 @@ pub enum VeronymousTokenError {
 
     #[error("Deserialization error. {0}")]
     DeserializationError(String),
+
+    #[error("Serialization error. {0}")]
+    SerializationError(String)
 }

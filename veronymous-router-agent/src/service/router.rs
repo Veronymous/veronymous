@@ -1,26 +1,38 @@
+use crate::db::token_ids_db::redis::RedisTokenIDsDB;
+use crate::db::token_ids_db::TokenIDsDB;
 use crate::service::connections::RouterConnectionsService;
-use crate::service::token_service::{TokenService, TOKEN_DOMAIN};
+use crate::service::token_service::TokenService;
 use crate::{AgentError, VeronymousAgentConfig};
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 use tokio::sync::RwLock;
 use veronymous_connection::model::{
     ConnectMessage, ConnectRequest, ConnectResponse, SerializableMessage,
 };
+use veronymous_token::token::get_current_epoch;
 
 pub struct VeronymousRouterAgentService {
     token_service: Arc<RwLock<TokenService>>,
 
+    token_domain: Vec<u8>,
+
     connections: RouterConnectionsService,
+
+    token_ids_db: RedisTokenIDsDB,
+
+    epoch_length: u64,
 }
 
 impl VeronymousRouterAgentService {
     pub async fn create(config: &VeronymousAgentConfig) -> Result<Self, AgentError> {
         let service = Self {
             token_service: Arc::new(RwLock::new(TokenService::create(config).await?)),
+            token_domain: Vec::from(config.token_domain.as_bytes()),
             connections: RouterConnectionsService::create(config).await?,
+            token_ids_db: RedisTokenIDsDB::create(config)?,
+            epoch_length: config.epoch_length * 60,
         };
 
         service.schedule_token_info_refresh().await;
@@ -36,11 +48,7 @@ impl VeronymousRouterAgentService {
         debug!("Handling connection request...");
 
         // Verify the connect request
-        if !self.verify_connect_request(request).await? {
-            return Err(AgentError::Unauthorized(format!(
-                "Connection request verification failed."
-            )));
-        }
+        self.verify_connect_request(request).await?;
 
         // Add the connection
         let peer_address = self.connections.add_connection(&request.public_key).await?;
@@ -93,17 +101,44 @@ impl VeronymousRouterAgentService {
         });
     }
 
-    // TODO: Create authentication service
-    // TODO: Track serial id
-    async fn verify_connect_request(&self, request: &ConnectRequest) -> Result<bool, AgentError> {
+    async fn verify_connect_request(&mut self, request: &ConnectRequest) -> Result<(), AgentError> {
         let token_service = self.token_service.read().await;
-        let (params, public_key, epoch) = token_service.get_token_params();
+        let (params, public_key, _) = token_service.get_token_params();
 
+        let (epoch, now) = self.get_current_epoch();
+
+        // Verify the token
         let result = request
             .token
-            .verify(TOKEN_DOMAIN, epoch, &public_key, &params)
+            .verify(&self.token_domain, epoch, &public_key, &params)
             .map_err(|e| AgentError::Unauthorized(format!("Token verification failed. {:?}", e)))?;
 
-        Ok(result)
+        if !result {
+            return Err(AgentError::Unauthorized(format!("Invalid auth token.")));
+        }
+
+        // Trace the serial number
+        let serial_number = request.token.serial_number().unwrap();
+
+        if self
+            .token_ids_db
+            .trace_token(epoch, self.epoch_length, now, &serial_number)?
+        {
+            return Err(AgentError::Unauthorized(format!(
+                "Attempted token id reuse."
+            )));
+        }
+
+        Ok(())
+    }
+
+    // returns epoch, now
+    fn get_current_epoch(&self) -> (u64, u64) {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+
+        (get_current_epoch(now, self.epoch_length), now)
     }
 }

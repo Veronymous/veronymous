@@ -15,3 +15,4 @@ use pairing_plus::bls12_381::Fr;
 
 pub type RootTokenId = Fr;
 pub type TokenBlinding = Fr;
+pub type SerialNumber = [u8; 32];

@@ -15,11 +15,15 @@ pub struct VeronymousAgentConfig {
 
     pub token_info_endpoint: String,
 
+    pub token_domain: String,
+
     pub epoch_length: u64,
 
     pub connections_redis_address: String,
 
     pub connections_state_redis_address: String,
+
+    pub token_ids_redis_address: String,
 
     pub private_addresses: HashSet<String>,
 }

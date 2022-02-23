@@ -21,6 +21,9 @@ redis = "0.21.5"
 [dependencies.veronymous_connection]
 path = "../veronymous-connection"
 
+[dependencies.veronymous_token]
+path = "../veronymous-token"
+
 [dependencies.ps_signatures]
 path = "../veronymous-token/crypto/ps-signatures"
 

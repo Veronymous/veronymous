@@ -1,5 +1,5 @@
 use crate::error::VeronymousTokenError;
-use crate::error::VeronymousTokenError::DeserializationError;
+use crate::error::VeronymousTokenError::{DeserializationError, SerializationError};
 use crate::serde::Serializable;
 use crate::utils::{read_fr, read_g1_point, read_g2_point};
 use commitments::pedersen_commitment::PedersenCommitment;
@@ -13,6 +13,9 @@ use ps_signatures::keys::{PsParams, PsPublicKey};
 use ps_signatures::pok_sig::PsPokOfSignatureProof;
 use std::io::Cursor;
 use std::time::{SystemTime, UNIX_EPOCH};
+use sha2::Sha256;
+use sha2::Digest;
+use crate::SerialNumber;
 
 const DST: &[u8] = b"BLS12381G2_XMD:BLAKE2B_SERIAL_NUMBER_GENERATOR:1_0_0";
 
@@ -32,6 +35,16 @@ pub struct ProofSerialNumber {
     pub serial_number: G2,
 
     pub randomness_commitment: G2,
+}
+
+impl ProofSerialNumber {
+    pub fn serial_number_bytes(&self) -> Result<Vec<u8>, VeronymousTokenError> {
+        let mut serial_number_bytes = Vec::with_capacity(96);
+        self.serial_number.serialize(&mut serial_number_bytes, true)
+            .map_err(|e| SerializationError(format!("Could not serialize serial number. {:?}", e)))?;
+
+        Ok(serial_number_bytes)
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -139,6 +152,16 @@ impl VeronymousToken {
         }
 
         Ok(true)
+    }
+
+    // TODO: Might want to name something else
+    pub fn serial_number(&self) -> Result<SerialNumber, VeronymousTokenError> {
+        let bytes = self.serial_number.serial_number_bytes()?;
+
+        let mut hasher = Sha256::new();
+        hasher.update(&bytes);
+
+        Ok(hasher.finalize().into())
     }
 }
 

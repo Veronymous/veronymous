@@ -31,6 +31,7 @@ impl RouterConnectionsService {
     pub async fn add_connection(
         &mut self,
         public_key: &PublicKey,
+        epoch: u64,
     ) -> Result<Ipv4Address, AgentError> {
         let address = self.connections_state_db.next_ip_address()?;
 
@@ -45,14 +46,14 @@ impl RouterConnectionsService {
             .add_peer(&public_key, address.clone())
             .await?;
 
-        self.connections_db.store_connection(public_key)?;
+        self.connections_db.store_connection(public_key, epoch)?;
 
         Ok(address)
     }
 
-    pub async fn clear_connections(&mut self) -> Result<(), AgentError> {
+    pub async fn clear_connections(&mut self, epoch: u64) -> Result<(), AgentError> {
         // Get the existing connections
-        let connections = self.connections_db.get_connections()?;
+        let connections = self.connections_db.get_connections(epoch)?;
 
         debug!("Removing connections: {:?}", connections);
 
@@ -67,7 +68,7 @@ impl RouterConnectionsService {
         }
 
         // Remove the connections from the database
-        self.connections_db.clear_connections()?;
+        self.connections_db.clear_connections(epoch)?;
 
         // Reset the ip address
         self.connections_state_db.reset_state()?;

@@ -47,11 +47,17 @@ impl VeronymousRouterAgentService {
     ) -> Result<(), AgentError> {
         debug!("Handling connection request...");
 
+        let now = Self::get_now();
+        let epoch = self.get_current_epoch(now);
+
         // Verify the connect request
-        self.verify_connect_request(request).await?;
+        self.verify_connect_request(request, now, epoch).await?;
 
         // Add the connection
-        let peer_address = self.connections.add_connection(&request.public_key).await?;
+        let peer_address = self
+            .connections
+            .add_connection(&request.public_key, epoch)
+            .await?;
 
         // Construct the response
         let response = ConnectResponse::new(true, peer_address);
@@ -66,7 +72,11 @@ impl VeronymousRouterAgentService {
     }
 
     pub async fn clear_connections(&mut self) -> Result<(), AgentError> {
-        self.connections.clear_connections().await
+        let now = Self::get_now();
+        let previous_epoch = self.get_previous_epoch(now);
+
+
+        self.connections.clear_connections(previous_epoch).await
     }
 
     async fn schedule_token_info_refresh(&self) {
@@ -101,11 +111,14 @@ impl VeronymousRouterAgentService {
         });
     }
 
-    async fn verify_connect_request(&mut self, request: &ConnectRequest) -> Result<(), AgentError> {
+    async fn verify_connect_request(
+        &mut self,
+        request: &ConnectRequest,
+        now: u64,
+        epoch: u64,
+    ) -> Result<(), AgentError> {
         let token_service = self.token_service.read().await;
         let (params, public_key, _) = token_service.get_token_params();
-
-        let (epoch, now) = self.get_current_epoch();
 
         // Verify the token
         let result = request
@@ -132,13 +145,19 @@ impl VeronymousRouterAgentService {
         Ok(())
     }
 
-    // returns epoch, now
-    fn get_current_epoch(&self) -> (u64, u64) {
-        let now = SystemTime::now()
+    fn get_now() -> u64 {
+        SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
-            .as_secs();
+            .as_secs()
+    }
 
-        (get_current_epoch(now, self.epoch_length), now)
+    // returns epoch, now
+    fn get_current_epoch(&self, now: u64) ->  u64 {
+        get_current_epoch(now, self.epoch_length)
+    }
+
+    fn get_previous_epoch(&self, now: u64) -> u64 {
+        get_current_epoch(now, self.epoch_length) - self.epoch_length
     }
 }

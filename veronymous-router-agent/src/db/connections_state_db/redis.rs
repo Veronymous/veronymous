@@ -24,10 +24,9 @@ impl RedisConnectionsStateDB {
             base_addresses.push(address.octets());
         }
 
-        let client =
-            redis::Client::open(config.connections_redis_address.as_str()).map_err(|err| {
-                AgentError::InitializationError(format!("Could not connect to redis. {:?}", err))
-            })?;
+        let client = redis::Client::open(config.connections_state_redis_address.as_str()).map_err(
+            |err| AgentError::InitializationError(format!("Could not connect to redis. {:?}", err)),
+        )?;
 
         let connection = client.get_connection().map_err(|err| {
             AgentError::InitializationError(format!("Could not connect to redis. {:?}", err))

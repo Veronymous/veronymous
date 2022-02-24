@@ -4,6 +4,7 @@ use redis::{Commands, Connection};
 use veronymous_token::token::get_next_epoch;
 use veronymous_token::SerialNumber;
 
+// TODO: Don't use timestamp for entry
 pub struct RedisTokenIDsDB {
     connection: Connection,
 }

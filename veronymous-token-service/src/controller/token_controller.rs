@@ -52,4 +52,40 @@ impl VeronymousTokenService for VeronymousTokenServiceController {
 
         Ok(Response::new(response))
     }
+
+    async fn issue_next_token(
+        &self,
+        request: tonic::Request<TokenRequest>,
+    ) -> Result<tonic::Response<TokenResponse>, tonic::Status> {
+        let request = request.into_inner();
+
+        debug!("Got 'issue_next_token' request: {:?}", request);
+
+        let token_request = request.token_request;
+
+        // parse the token request
+        let token_request = match RootTokenRequest::deserialize(&token_request) {
+            Ok(request) => request,
+            Err(e) => {
+                debug!("Could not decode veronymous root token request. {:?}", e);
+
+                return Err(Status::invalid_argument("Invalid token request."));
+            }
+        };
+
+        let token_response = match self.service.issue_next_token(&token_request) {
+            Ok(response) => response,
+            Err(e) => {
+                debug!("Could not issue token response. {:?}", e);
+
+                return Err(Status::aborted("Could not issue token"));
+            }
+        };
+
+        let response = TokenResponse {
+            token_response
+        };
+
+        Ok(Response::new(response))
+    }
 }

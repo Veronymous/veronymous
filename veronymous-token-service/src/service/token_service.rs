@@ -52,6 +52,34 @@ impl TokenService {
         Ok(token_response)
     }
 
+    pub fn issue_next_token(
+        &self,
+        token_request: &RootTokenRequest,
+    ) -> Result<Vec<u8>, TokenServiceException> {
+        // Get the signing key
+        let kms = self.kms.lock().unwrap();
+
+        let signing_key = kms.get_next_signing_key();
+        let (key_params, public_key) = kms.get_next_public_key();
+
+        let mut rng = thread_rng();
+
+        // Issue the token
+        let token_response = issue_root_token(
+            token_request,
+            &signing_key,
+            &public_key,
+            &key_params,
+            &mut rng,
+        )
+            .map_err(|e| TokenError(format!("Could not issue root token. {:?}", e)))?;
+
+        // Serialize
+        let token_response = token_response.serialize();
+
+        Ok(token_response)
+    }
+
     fn schedule_key_updates(&self, key_lifetime: u64) {
         info!("Scheduling key updates...");
         // Convert minutes to seconds

@@ -35,6 +35,8 @@ pub struct KeyManagementService {
     next_key_params: Option<PsParams>,
 
     next_public_key: Option<PsPublicKey>,
+
+    next_signing_key: Option<PsSigningKey>
 }
 
 impl KeyManagementService {
@@ -55,6 +57,7 @@ impl KeyManagementService {
             next_key_id: None,
             next_key_params: None,
             next_public_key: None,
+            next_signing_key: None
         };
 
         service.load_keys().unwrap();
@@ -78,6 +81,10 @@ impl KeyManagementService {
             self.next_key_params.as_ref().unwrap().clone(),
             self.next_public_key.as_ref().unwrap().clone(),
         )
+    }
+
+    pub fn get_next_signing_key(&self) -> PsSigningKey {
+        self.next_signing_key.as_ref().unwrap().clone()
     }
 }
 
@@ -146,6 +153,7 @@ impl KeyManagementService {
             // Load keys
             self.next_key_params = Some(self.get_key_params(&self.get_next_key_params_id()?)?);
             self.next_public_key = Some(self.get_public_key(&self.get_next_public_key_id()?)?);
+            self.signing_key = Some(self.get_signing_key(&self.get_next_signing_key_id()?)?);
         }
 
         Ok(())
@@ -187,6 +195,7 @@ impl KeyManagementService {
 
         self.next_key_params = Some(params);
         self.next_public_key = Some(public_key);
+        self.next_signing_key = Some(signing_key);
 
         Ok(())
     }

@@ -4,6 +4,8 @@ package veronymous_token_service;
 
 service VeronymousTokenService {
   rpc IssueToken(TokenRequest) returns (TokenResponse);
+
+  rpc IssueNextToken(TokenRequest) returns (TokenResponse);
 }
 
 message TokenRequest {

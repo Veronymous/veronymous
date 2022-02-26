@@ -2,6 +2,7 @@ use crate::error::VeronymousTokenError;
 use crate::error::VeronymousTokenError::{DeserializationError, SerializationError};
 use crate::serde::Serializable;
 use crate::utils::{read_fr, read_g1_point, read_g2_point};
+use crate::SerialNumber;
 use commitments::pedersen_commitment::PedersenCommitment;
 use commitments::pok_pedersen_commitment::CommitmentProof;
 use crypto_common::hash_to_fr;
@@ -11,11 +12,10 @@ use pairing_plus::hash_to_field::ExpandMsgXmd;
 use pairing_plus::serdes::SerDes;
 use ps_signatures::keys::{PsParams, PsPublicKey};
 use ps_signatures::pok_sig::PsPokOfSignatureProof;
+use sha2::Digest;
+use sha2::Sha256;
 use std::io::Cursor;
 use std::time::{SystemTime, UNIX_EPOCH};
-use sha2::Sha256;
-use sha2::Digest;
-use crate::SerialNumber;
 
 const DST: &[u8] = b"BLS12381G2_XMD:BLAKE2B_SERIAL_NUMBER_GENERATOR:1_0_0";
 
@@ -40,8 +40,11 @@ pub struct ProofSerialNumber {
 impl ProofSerialNumber {
     pub fn serial_number_bytes(&self) -> Result<Vec<u8>, VeronymousTokenError> {
         let mut serial_number_bytes = Vec::with_capacity(96);
-        self.serial_number.serialize(&mut serial_number_bytes, true)
-            .map_err(|e| SerializationError(format!("Could not serialize serial number. {:?}", e)))?;
+        self.serial_number
+            .serialize(&mut serial_number_bytes, true)
+            .map_err(|e| {
+                SerializationError(format!("Could not serialize serial number. {:?}", e))
+            })?;
 
         Ok(serial_number_bytes)
     }
@@ -206,8 +209,8 @@ impl Serializable for VeronymousToken {
     }
 
     fn deserialize(bytes: &[u8]) -> Result<Self, VeronymousTokenError>
-    where
-        Self: Sized,
+        where
+            Self: Sized,
     {
         if bytes.len() != SERIALIZED_TOKEN_SIZE {
             return Err(DeserializationError(format!(
@@ -251,8 +254,17 @@ pub fn get_now_u64() -> u64 {
     now.duration_since(UNIX_EPOCH).unwrap().as_secs()
 }
 
-pub fn get_current_epoch(now: u64, epoch_length: u64) -> u64 {
-    now - (now % epoch_length)
+pub fn get_current_epoch(now: u64, epoch_length: u64, buffer: u64) -> u64 {
+    let remainder = now % epoch_length;
+
+    let current_epoch = now - remainder;
+
+    // If in the buffer send the next epoch
+    if buffer > (epoch_length - remainder) {
+        current_epoch + epoch_length
+    } else {
+        current_epoch
+    }
 }
 
 pub fn get_next_epoch(now: u64, epoch_length: u64) -> u64 {
@@ -289,7 +301,12 @@ mod tests {
     #[test]
     fn test_get_current_epoch() {
         let now = 1643715498;
-        let current_epoch = get_current_epoch(now, 10 * 60);
+        let current_epoch = get_current_epoch(now, 10 * 60, 0);
         assert_eq!(1643715000, current_epoch);
+
+        // With buffer
+        let now = 1645911488;
+        let current_epoch = get_current_epoch(now, 10 * 60, 2 * 60);
+        assert_eq!(1645911600, current_epoch);
     }
 }

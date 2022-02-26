@@ -23,7 +23,8 @@ impl RedisConnectionsDB {
 
 impl ConnectionsDB for RedisConnectionsDB {
     fn store_connection(&mut self, public_key: &PublicKey, epoch: u64) -> Result<(), AgentError> {
-        let _: () = self.connection
+        let _: () = self
+            .connection
             .lpush(epoch, public_key)
             .map_err(|err| AgentError::DBError(format!("Could not store connection. {:?}", err)))?;
 
@@ -33,7 +34,7 @@ impl ConnectionsDB for RedisConnectionsDB {
     fn get_connections(&mut self, epoch: u64) -> Result<Vec<PublicKey>, AgentError> {
         let raw_public_keys: Vec<Vec<u8>> = self
             .connection
-            .lrange(epoch, 0,u32::MAX as isize)
+            .lrange(epoch, 0, u32::MAX as isize)
             .map_err(|err| AgentError::DBError(format!("Could not read connections. {:?}", err)))?;
 
         let mut public_keys = Vec::with_capacity(raw_public_keys.len());
@@ -56,10 +57,9 @@ impl ConnectionsDB for RedisConnectionsDB {
 
     fn clear_connections(&mut self, epoch: u64) -> Result<(), AgentError> {
         // Delete the list
-        self.connection.del(epoch)
-            .map_err(|err| {
-                AgentError::DBError(format!("Could not remove connections. {:?}", err))
-            })?;
+        self.connection.del(epoch).map_err(|err| {
+            AgentError::DBError(format!("Could not remove connections. {:?}", err))
+        })?;
 
         Ok(())
     }

@@ -21,5 +21,5 @@ pub enum VeronymousTokenError {
     DeserializationError(String),
 
     #[error("Serialization error. {0}")]
-    SerializationError(String)
+    SerializationError(String),
 }

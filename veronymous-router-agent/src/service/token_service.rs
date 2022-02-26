@@ -8,6 +8,7 @@ use std::str::FromStr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::time::Instant;
 use tonic::transport::{Channel, Endpoint};
+use veronymous_token::token::{get_current_epoch, get_now_u64};
 
 const UPDATE_INTERVAL: u64 = 3;
 
@@ -70,13 +71,13 @@ impl TokenService {
         let current_token_info = self.fetch_token_info().await?;
         let next_token_info = self.fetch_next_token_info().await?;
 
-        self.current_epoch = Some(Self::calculate_current_epoch(
+        self.current_epoch = Some(get_current_epoch(
+            get_now_u64(),
             current_token_info.key_lifetime * 60,
+            0
         ));
         self.current_token_info = Some(current_token_info);
         self.next_token_info = Some(next_token_info);
-
-        debug!("Current epoch: {:?}", self.current_epoch);
 
         Ok(())
     }
@@ -111,8 +112,10 @@ impl TokenService {
             }
 
             // Set the current token info
-            self.current_epoch = Some(Self::calculate_current_epoch(
+            self.current_epoch = Some(get_current_epoch(
+                get_now_u64(),
                 current_token_info.key_lifetime * 60,
+                0
             ));
             self.current_token_info = Some(current_token_info);
             // Set the new next_token_info. TODO: Catch or panic?
@@ -171,15 +174,6 @@ impl TokenService {
         let next_epoch = now_instant + Duration::from_secs(time_until_next_epoch);
 
         next_epoch
-    }
-
-    fn calculate_current_epoch(key_lifetime: u64) -> u64 {
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
-
-        now - (now % key_lifetime)
     }
 }
 

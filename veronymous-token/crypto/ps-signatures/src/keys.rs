@@ -152,8 +152,8 @@ impl Serializable for PsSigningKey {
     }
 
     fn deserialize(bytes: &[u8]) -> Result<Self, PsSignatureError>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         let mut cursor = Cursor::new(bytes);
 
@@ -235,8 +235,8 @@ impl Serializable for PsPublicKey {
     }
 
     fn deserialize(bytes: &[u8]) -> Result<Self, PsSignatureError>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         let mut cursor = Cursor::new(bytes);
 

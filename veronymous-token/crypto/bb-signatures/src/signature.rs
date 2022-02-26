@@ -1,7 +1,7 @@
+use crate::keys::{BbParams, BbPublicKey, BbSigningKey};
+use ff_zeroize::Field;
 use pairing_plus::bls12_381::{Bls12, Fr, G1};
 use pairing_plus::{CurveProjective, Engine};
-use ff_zeroize::Field;
-use crate::keys::{BbParams, BbPublicKey, BbSigningKey};
 
 #[derive(Clone, Debug)]
 pub struct BbSignature(G1);
@@ -36,11 +36,11 @@ impl BbSignature {
 
 #[cfg(test)]
 mod tests {
-    use pairing_plus::bls12_381::Fr;
-    use rand::thread_rng;
-    use ff_zeroize::Field;
     use crate::keys::{BbParams, BbSigningKey};
     use crate::signature::BbSignature;
+    use ff_zeroize::Field;
+    use pairing_plus::bls12_381::Fr;
+    use rand::thread_rng;
 
     #[test]
     fn test_bb_signature() {

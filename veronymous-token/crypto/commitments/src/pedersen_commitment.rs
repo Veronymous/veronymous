@@ -91,7 +91,6 @@ impl Into<G2> for &PedersenCommitment<G2> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::pedersen_commitment::PedersenCommitmentCommitting;

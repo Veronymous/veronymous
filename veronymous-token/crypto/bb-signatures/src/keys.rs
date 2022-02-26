@@ -1,7 +1,7 @@
+use crypto_common::rand_non_zero_fr;
 use pairing_plus::bls12_381::{Fr, G1, G2};
 use pairing_plus::CurveProjective;
 use rand::CryptoRng;
-use crypto_common::rand_non_zero_fr;
 
 #[derive(Clone, Debug)]
 pub struct BbParams {
@@ -36,7 +36,6 @@ impl BbSigningKey {
 
 #[derive(Clone, Debug)]
 pub struct BbPublicKey(pub G2);
-
 
 #[cfg(test)]
 mod tests {

@@ -4,14 +4,14 @@ use crate::service::connections::RouterConnectionsService;
 use crate::service::token_service::TokenService;
 use crate::{AgentError, VeronymousAgentConfig};
 use std::sync::Arc;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::Duration;
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 use tokio::sync::RwLock;
 use veronymous_connection::model::{
     ConnectMessage, ConnectRequest, ConnectResponse, SerializableMessage,
 };
-use veronymous_token::token::get_current_epoch;
+use veronymous_token::token::{get_current_epoch, get_now_u64};
 
 pub struct VeronymousRouterAgentService {
     token_service: Arc<RwLock<TokenService>>,
@@ -23,6 +23,8 @@ pub struct VeronymousRouterAgentService {
     token_ids_db: RedisTokenIDsDB,
 
     epoch_length: u64,
+
+    epoch_buffer: u64,
 }
 
 impl VeronymousRouterAgentService {
@@ -33,6 +35,7 @@ impl VeronymousRouterAgentService {
             connections: RouterConnectionsService::create(config).await?,
             token_ids_db: RedisTokenIDsDB::create(config)?,
             epoch_length: config.epoch_length * 60,
+            epoch_buffer: config.epoch_buffer * 60,
         };
 
         service.schedule_token_info_refresh().await;
@@ -47,7 +50,7 @@ impl VeronymousRouterAgentService {
     ) -> Result<(), AgentError> {
         debug!("Handling connection request...");
 
-        let now = Self::get_now();
+        let now = get_now_u64();
         let epoch = self.get_current_epoch(now);
 
         // Verify the connect request
@@ -72,9 +75,10 @@ impl VeronymousRouterAgentService {
     }
 
     pub async fn clear_connections(&mut self) -> Result<(), AgentError> {
-        let now = Self::get_now();
+        let now = get_now_u64();
         let previous_epoch = self.get_previous_epoch(now);
 
+        debug!("Clearing connections for epoch {}...", previous_epoch);
 
         self.connections.clear_connections(previous_epoch).await
     }
@@ -145,19 +149,12 @@ impl VeronymousRouterAgentService {
         Ok(())
     }
 
-    fn get_now() -> u64 {
-        SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_secs()
-    }
-
     // returns epoch, now
-    fn get_current_epoch(&self, now: u64) ->  u64 {
-        get_current_epoch(now, self.epoch_length)
+    fn get_current_epoch(&self, now: u64) -> u64 {
+        get_current_epoch(now, self.epoch_length, self.epoch_buffer)
     }
 
     fn get_previous_epoch(&self, now: u64) -> u64 {
-        get_current_epoch(now, self.epoch_length) - self.epoch_length
+        get_current_epoch(now, self.epoch_length, 0) - self.epoch_length
     }
 }

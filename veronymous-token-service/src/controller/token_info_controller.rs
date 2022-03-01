@@ -1,9 +1,9 @@
 use crate::grpc::veronymous_token_info_service::veronymous_token_info_service_server::VeronymousTokenInfoService;
 use crate::grpc::veronymous_token_info_service::{TokenInfo, TokenInfoRequest};
 use crate::{KeyManagementService, VeronymousTokenServiceConfig};
+use ps_signatures::serde::Serializable;
 use std::sync::{Arc, Mutex};
 use tonic::{Response, Status};
-use ps_signatures::serde::Serializable;
 
 pub struct VeronymousTokenInfoServiceController {
     kms: Arc<Mutex<KeyManagementService>>,
@@ -12,7 +12,10 @@ pub struct VeronymousTokenInfoServiceController {
 }
 
 impl VeronymousTokenInfoServiceController {
-    pub fn new(kms: Arc<Mutex<KeyManagementService>>, config: &VeronymousTokenServiceConfig) -> Self {
+    pub fn new(
+        kms: Arc<Mutex<KeyManagementService>>,
+        config: &VeronymousTokenServiceConfig,
+    ) -> Self {
         Self {
             kms,
             key_lifetime: config.key_lifetime,

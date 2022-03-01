@@ -44,7 +44,7 @@ impl TokenService {
             &key_params,
             &mut rng,
         )
-            .map_err(|e| TokenError(format!("Could not issue root token. {:?}", e)))?;
+        .map_err(|e| TokenError(format!("Could not issue root token. {:?}", e)))?;
 
         // Serialize
         let token_response = token_response.serialize();
@@ -72,7 +72,7 @@ impl TokenService {
             &key_params,
             &mut rng,
         )
-            .map_err(|e| TokenError(format!("Could not issue root token. {:?}", e)))?;
+        .map_err(|e| TokenError(format!("Could not issue root token. {:?}", e)))?;
 
         // Serialize
         let token_response = token_response.serialize();

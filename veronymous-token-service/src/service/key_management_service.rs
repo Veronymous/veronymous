@@ -36,7 +36,7 @@ pub struct KeyManagementService {
 
     next_public_key: Option<PsPublicKey>,
 
-    next_signing_key: Option<PsSigningKey>
+    next_signing_key: Option<PsSigningKey>,
 }
 
 impl KeyManagementService {
@@ -57,7 +57,7 @@ impl KeyManagementService {
             next_key_id: None,
             next_key_params: None,
             next_public_key: None,
-            next_signing_key: None
+            next_signing_key: None,
         };
 
         service.load_keys().unwrap();
@@ -192,7 +192,6 @@ impl KeyManagementService {
         self.store_signing_key(&signing_key, &self.get_next_signing_key_id()?)?;
         self.store_public_key(&public_key, &self.get_next_public_key_id()?)?;
 
-
         self.next_key_params = Some(params);
         self.next_public_key = Some(public_key);
         self.next_signing_key = Some(signing_key);
@@ -270,7 +269,11 @@ impl KeyManagementService {
         Ok(signing_key)
     }
 
-    fn store_key_params(&mut self, params: &PsParams, params_id: &String) -> Result<(), TokenServiceException> {
+    fn store_key_params(
+        &mut self,
+        params: &PsParams,
+        params_id: &String,
+    ) -> Result<(), TokenServiceException> {
         let params_serialized = params
             .serialize()
             .map_err(|e| SerializationError(format!("Could not serialize params. {:?}", e)))?;
@@ -299,7 +302,11 @@ impl KeyManagementService {
         Ok(())
     }
 
-    fn store_public_key(&mut self, public_key: &PsPublicKey, key_id: &String) -> Result<(), TokenServiceException> {
+    fn store_public_key(
+        &mut self,
+        public_key: &PsPublicKey,
+        key_id: &String,
+    ) -> Result<(), TokenServiceException> {
         let key_serialized = public_key
             .serialize()
             .map_err(|e| SerializationError(format!("Could not serialize public key. {:?}", e)))?;
@@ -355,7 +362,6 @@ impl KeyManagementService {
         }
     }
 
-
     // returns (current key id, next key id)
     fn calculate_base_key_ids(&self) -> (String, String) {
         let now = SystemTime::now();
@@ -368,4 +374,3 @@ impl KeyManagementService {
         (current_epoch.to_string(), next_epoch.to_string())
     }
 }
-

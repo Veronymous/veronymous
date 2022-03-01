@@ -29,8 +29,8 @@ pub trait SerializableMessage {
     fn to_bytes(&self) -> Vec<u8>;
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, ConnectionError>
-        where
-            Self: Sized;
+    where
+        Self: Sized;
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -53,8 +53,8 @@ impl SerializableMessage for ConnectMessage {
     }
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, ConnectionError>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         if bytes.len() < MIN_CONNECT_MESSAGE_SIZE {
             return Err(ConnectionError::DeserializationError(format!(
@@ -102,7 +102,8 @@ impl ConnectRequest {
         public_key: &PsPublicKey,
         params: &PsParams,
     ) -> Result<bool, ConnectionError> {
-        let result = self.token
+        let result = self
+            .token
             .verify(domain, epoch, public_key, params)
             .map_err(|e| {
                 ConnectionError::VerificationError(format!("Could not verify token. {:?}", e))
@@ -122,8 +123,8 @@ impl SerializableMessage for ConnectRequest {
     }
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, ConnectionError>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         if bytes.len() != CONNECT_REQUEST_SIZE {
             return Err(ConnectionError::DeserializationError(format!(
@@ -177,8 +178,8 @@ impl SerializableMessage for ConnectResponse {
     }
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, ConnectionError>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         if bytes.len() != CONNECT_RESPONSE_SIZE {
             return Err(ConnectionError::DeserializationError(format!(
@@ -279,7 +280,7 @@ mod tests {
                 191, 114, 176, 17, 164, 112, 132, 121, 108, 153, 216, 152, 183, 27, 107, 174, 2,
                 105, 133, 249, 69, 238, 16, 81, 226, 255, 133, 61,
             ])
-                .unwrap(),
+            .unwrap(),
         })
     }
 

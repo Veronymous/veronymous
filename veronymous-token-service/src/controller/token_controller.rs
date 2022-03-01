@@ -46,9 +46,7 @@ impl VeronymousTokenService for VeronymousTokenServiceController {
             }
         };
 
-        let response = TokenResponse {
-            token_response
-        };
+        let response = TokenResponse { token_response };
 
         Ok(Response::new(response))
     }
@@ -82,9 +80,7 @@ impl VeronymousTokenService for VeronymousTokenServiceController {
             }
         };
 
-        let response = TokenResponse {
-            token_response
-        };
+        let response = TokenResponse { token_response };
 
         Ok(Response::new(response))
     }

@@ -12,6 +12,7 @@ ps_signatures = { path = "../veronymous-token/crypto/ps-signatures" }
 crypto_common = { path = "../veronymous-token/crypto/common" }
 rand = "0.7.3"
 pairing-plus = "0.19"
+thiserror = "1.0.30"
 
 [dev-dependencies]
 tonic = "0.6"

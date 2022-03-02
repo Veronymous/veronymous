@@ -1,3 +1,4 @@
+use std::fs;
 use std::net::Ipv4Addr;
 use std::str::FromStr;
 use tonic::transport::{Channel, Endpoint};
@@ -5,6 +6,7 @@ use veronymous_connection::model::{Ipv4Address, PublicKey};
 use wg_manager_service_common::wg_manager_service::wireguard_manager_service_client::WireguardManagerServiceClient;
 use wg_manager_service_common::wg_manager_service::{AddPeerRequest, RemovePeerRequest};
 
+use crate::AgentError::InitializationError;
 use crate::{AgentError, VeronymousAgentConfig};
 
 pub struct WireguardService {
@@ -15,17 +17,35 @@ impl WireguardService {
     pub async fn create(config: &VeronymousAgentConfig) -> Result<Self, AgentError> {
         let mut clients = Vec::with_capacity(config.address.len());
 
+        // Configure CA
+        let mut tls_config = None;
+        if config.wg_tls_ca.is_some() {
+            let ca = fs::read(config.wg_tls_ca.as_ref().unwrap()).unwrap();
+            let ca = tonic::transport::Certificate::from_pem(ca);
+
+            let tls = tonic::transport::ClientTlsConfig::new().ca_certificate(ca);
+            tls_config = Some(tls);
+        }
+
         for address in &config.wg_addresses {
             info!("Connecting to wireguard server: {}", address);
 
-            let endpoint = Endpoint::from_str(&address).unwrap();
+            let mut channel = Endpoint::from_str(&address).unwrap();
 
-            let client = WireguardManagerServiceClient::connect(endpoint)
+            // Configure the tls certificate authority
+            if let Some(tls_config) = &tls_config {
+                info!("Configuring certificate authority for wireguard client...");
+                channel = channel.tls_config(tls_config.clone()).map_err(|e| {
+                    InitializationError(format!("Could not configure tls. {:?}", e))
+                })?;
+            }
+
+            let client = WireguardManagerServiceClient::connect(channel)
                 .await
                 .map_err(|err| {
                     AgentError::InitializationError(format!(
-                        "Could not connect to wireguard server ({}). {:?}",
-                        config.address, err
+                        "Could not connect to wireguard server {}. {:?}",
+                        address, err
                     ))
                 })?;
 

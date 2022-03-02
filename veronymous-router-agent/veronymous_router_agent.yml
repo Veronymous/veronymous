@@ -1,7 +1,10 @@
 address: 127.0.0.1:7777
 
 wg_addresses:
-  - http://nbouma-vm:50051
+  - http://localhost:50061
+  #- http://nbouma-vm:50051
+
+wg_tls_ca: /home/noah/deployments/veronymous/dev/certs/wireguard-node-1/tutorial/my_ca.pem
 
 token_info_endpoint: http://127.0.0.1:50051
 token_domain: dev_domain

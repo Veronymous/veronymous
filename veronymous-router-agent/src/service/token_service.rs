@@ -74,7 +74,7 @@ impl TokenService {
         self.current_epoch = Some(get_current_epoch(
             get_now_u64(),
             current_token_info.key_lifetime * 60,
-            0
+            0,
         ));
         self.current_token_info = Some(current_token_info);
         self.next_token_info = Some(next_token_info);
@@ -115,7 +115,7 @@ impl TokenService {
             self.current_epoch = Some(get_current_epoch(
                 get_now_u64(),
                 current_token_info.key_lifetime * 60,
-                0
+                0,
             ));
             self.current_token_info = Some(current_token_info);
             // Set the new next_token_info. TODO: Catch or panic?

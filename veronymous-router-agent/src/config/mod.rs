@@ -13,6 +13,8 @@ pub struct VeronymousAgentConfig {
 
     pub wg_addresses: HashSet<String>,
 
+    pub wg_tls_ca: Option<String>,
+
     pub token_info_endpoint: String,
 
     pub token_domain: String,

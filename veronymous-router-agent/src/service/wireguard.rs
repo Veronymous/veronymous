@@ -19,12 +19,30 @@ impl WireguardService {
 
         // Configure CA
         let mut tls_config = None;
-        if config.wg_tls_ca.is_some() {
-            let ca = fs::read(config.wg_tls_ca.as_ref().unwrap()).unwrap();
+
+        // TLS Certificate authority
+        if let Some(ca) = &config.wg_tls_ca {
+            let ca = fs::read(ca).unwrap();
             let ca = tonic::transport::Certificate::from_pem(ca);
 
             let tls = tonic::transport::ClientTlsConfig::new().ca_certificate(ca);
             tls_config = Some(tls);
+        }
+
+        // Client cert for authentication
+        if config.wg_client_cert.is_some() {
+            info!("Loading client certificate...");
+            let cert = fs::read(config.wg_client_cert.as_ref().unwrap()).unwrap();
+            let key = fs::read(config.wg_client_key.as_ref().unwrap()).unwrap();
+
+            let id = tonic::transport::Identity::from_pem(cert, key);
+
+            if let Some(tls) = tls_config {
+                tls_config = Some(tls.identity(id));
+            } else {
+                let tls = tonic::transport::ClientTlsConfig::new().identity(id);
+                tls_config = Some(tls);
+            }
         }
 
         for address in &config.wg_addresses {

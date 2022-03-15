@@ -130,6 +130,7 @@ impl KeyManagementService {
         Ok(())
     }
 
+    // TODO: Might not properly load next keys
     fn load_next_keys(&mut self, base_key_id: String) -> Result<(), TokenServiceException> {
         // Check if key is already loaded
         match &self.next_key_id {
@@ -153,7 +154,7 @@ impl KeyManagementService {
             // Load keys
             self.next_key_params = Some(self.get_key_params(&self.get_next_key_params_id()?)?);
             self.next_public_key = Some(self.get_public_key(&self.get_next_public_key_id()?)?);
-            self.signing_key = Some(self.get_signing_key(&self.get_next_signing_key_id()?)?);
+            self.next_signing_key = Some(self.get_signing_key(&self.get_next_signing_key_id()?)?);
         }
 
         Ok(())

@@ -3,4 +3,4 @@ port: 50051
 
 key_file: keys.db
 # Key lifetime in minutes
-key_lifetime: 20
+key_lifetime: 720

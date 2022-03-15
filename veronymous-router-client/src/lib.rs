@@ -45,10 +45,15 @@ impl VeronymousRouterClient {
                     .read(&mut buffer)
                     .map_err(|e| IoError(format!("Could not read response: {:?}", e)))?;
 
-                let response = ConnectResponse::from_bytes(&buffer)
+                let response = ConnectMessage::from_bytes(&buffer)
                     .map_err(|e| InvalidResponse(format!("{:?}", e)))?;
 
-                Ok(response)
+                if let ConnectMessage::ConnectResponse(response) = response {
+                    Ok(response)
+                } else {
+                    return Err(InvalidResponse(format!("Bad response.")))
+                }
+
             }
             Err(e) => return Err(ConnectionError(format!("Could not connect. {:?}", e))),
         }

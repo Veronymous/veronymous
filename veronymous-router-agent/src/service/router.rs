@@ -29,7 +29,7 @@ pub struct VeronymousRouterAgentService {
 
 impl VeronymousRouterAgentService {
     pub async fn create(config: &VeronymousAgentConfig) -> Result<Self, AgentError> {
-        let service = Self {
+        let mut service = Self {
             token_service: Arc::new(RwLock::new(TokenService::create(config).await?)),
             token_domain: Vec::from(config.token_domain.as_bytes()),
             connections: RouterConnectionsService::create(config).await?,
@@ -39,6 +39,13 @@ impl VeronymousRouterAgentService {
         };
 
         service.schedule_token_info_refresh().await;
+
+        // Clear old connections
+        let now = get_now_u64();
+        let current_epoch = service.get_current_epoch(now);
+        let next_epoch = current_epoch + service.epoch_length;
+
+        service.connections.clear_old_connections(current_epoch, next_epoch).await?;
 
         Ok(service)
     }

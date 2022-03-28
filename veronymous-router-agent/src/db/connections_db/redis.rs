@@ -63,4 +63,12 @@ impl ConnectionsDB for RedisConnectionsDB {
 
         Ok(())
     }
+
+    fn get_stored_epochs(&mut self) -> Result<Vec<u64>, AgentError> {
+        let epochs: Vec<u64> = self.connection.keys("*").map_err(|err| {
+            AgentError::DBError(format!("Could not find stored epochs. {:?}", err))
+        })?;
+
+        Ok(epochs)
+    }
 }

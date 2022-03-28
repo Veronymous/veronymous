@@ -75,4 +75,17 @@ impl RouterConnectionsService {
 
         Ok(())
     }
+
+    // Clear connections that might of been missed
+    pub async fn clear_old_connections(&mut self, epoch: u64, next_epoch: u64) -> Result<(), AgentError> {
+        let stored_epochs = self.connections_db.get_stored_epochs()?;
+
+        for stored_epoch in stored_epochs {
+            if stored_epoch != epoch && stored_epoch != next_epoch {
+                self.clear_connections(stored_epoch).await?;
+            }
+        }
+
+        Ok(())
+    }
 }

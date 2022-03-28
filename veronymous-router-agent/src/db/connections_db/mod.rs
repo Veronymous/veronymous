@@ -10,4 +10,6 @@ pub trait ConnectionsDB {
     fn get_connections(&mut self, epoch: u64) -> Result<Vec<PublicKey>, AgentError>;
 
     fn clear_connections(&mut self, epoch: u64) -> Result<(), AgentError>;
+
+    fn get_stored_epochs(&mut self) -> Result<Vec<u64>, AgentError>;
 }

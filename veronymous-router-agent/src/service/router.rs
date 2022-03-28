@@ -116,7 +116,6 @@ impl VeronymousRouterAgentService {
 
                 let mut token_service = token_service.write().await;
 
-                // TODO: Catch error or panic?
                 token_service.update_token_info().await.unwrap();
             }
         });

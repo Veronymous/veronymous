@@ -12,7 +12,6 @@ use veronymous_token::token::{get_current_epoch, get_now_u64};
 
 const UPDATE_INTERVAL: u64 = 3;
 
-// TODO: Support buffer
 // Use rwlock?
 pub struct TokenService {
     client: VeronymousTokenInfoServiceClient<Channel>,
@@ -118,7 +117,7 @@ impl TokenService {
                 0,
             ));
             self.current_token_info = Some(current_token_info);
-            // Set the new next_token_info. TODO: Catch or panic?
+            // Set the new next_token_info.
             self.next_token_info = Some(self.fetch_next_token_info().await.unwrap());
 
             break;

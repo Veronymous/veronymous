@@ -4,7 +4,6 @@ use redis::{Commands, Connection};
 use veronymous_token::token::get_next_epoch;
 use veronymous_token::SerialNumber;
 
-// TODO: Don't use timestamp for entry
 pub struct RedisTokenIDsDB {
     connection: Connection,
 }
@@ -36,7 +35,6 @@ impl TokenIDsDB for RedisTokenIDsDB {
 
         debug!("Tracing token id: {}", token_id_entry);
 
-        // TODO: Set expiration
         let exists: bool = self
             .connection
             .exists(&token_id_entry)

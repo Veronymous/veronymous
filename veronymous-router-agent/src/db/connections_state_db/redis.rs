@@ -16,7 +16,6 @@ pub struct RedisConnectionsStateDB {
 
 impl RedisConnectionsStateDB {
     pub fn create(config: &VeronymousAgentConfig) -> Result<Self, AgentError> {
-        // TODO: Make sure addresses are unique (Indexed hash set)
         let mut base_addresses = Vec::with_capacity(config.private_addresses.len());
 
         for address in &config.private_addresses {

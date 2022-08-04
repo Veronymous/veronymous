@@ -209,8 +209,8 @@ impl Serializable for VeronymousToken {
     }
 
     fn deserialize(bytes: &[u8]) -> Result<Self, VeronymousTokenError>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         if bytes.len() != SERIALIZED_TOKEN_SIZE {
             return Err(DeserializationError(format!(

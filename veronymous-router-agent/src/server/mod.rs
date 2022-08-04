@@ -76,9 +76,9 @@ impl VeronymousRouterAgentServer {
     }
 
     /*
-     * Removes all connections after each epoch
+    * Removes all connections after each epoch
 
-     */
+    */
     async fn schedule_connection_cleaner(&self) {
         info!("Scheduling connection cleaner...");
 

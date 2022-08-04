@@ -1,27 +1,23 @@
 use crate::db::connections_state_db::ConnectionsStateDB;
 use crate::{AgentError, VeronymousAgentConfig};
+use rand::Rng;
 use redis::{Commands, Connection};
 use std::net::Ipv4Addr;
 use veronymous_connection::model::Ipv4Address;
 
-const NEXT_IP_ADDRESS_KEY: &[u8; 12] = b"next_address";
-
+/*
+* subnet mask for ipv4 is 16 bit
+*/
 pub struct RedisConnectionsStateDB {
-    base_addresses: Vec<Ipv4Address>,
-
-    base_address_index: usize,
+    gateway_ipv4: Ipv4Address,
 
     connection: Connection,
 }
 
 impl RedisConnectionsStateDB {
     pub fn create(config: &VeronymousAgentConfig) -> Result<Self, AgentError> {
-        let mut base_addresses = Vec::with_capacity(config.private_addresses.len());
-
-        for address in &config.private_addresses {
-            let address: Ipv4Addr = address.parse().unwrap();
-            base_addresses.push(address.octets());
-        }
+        let gateway_ipv4: Ipv4Addr = config.wg_gateway_ipv4.parse().unwrap();
+        let gateway_ipv4: Ipv4Address = gateway_ipv4.octets();
 
         let client = redis::Client::open(config.connections_state_redis_address.as_str()).map_err(
             |err| AgentError::InitializationError(format!("Could not connect to redis. {:?}", err)),
@@ -32,80 +28,77 @@ impl RedisConnectionsStateDB {
         })?;
 
         Ok(Self {
-            base_addresses,
-            base_address_index: 0,
+            gateway_ipv4,
             connection,
         })
     }
 }
 
 impl ConnectionsStateDB for RedisConnectionsStateDB {
-    fn init(&mut self) -> Result<(), AgentError> {
-        let address: Vec<u8> = self.connection.get(NEXT_IP_ADDRESS_KEY).map_err(|err| {
-            AgentError::DBError(format!("Could not get next ip address: {:?}", err))
-        })?;
+    /*
+     * NOTE: Possible race condition: If two agents create an address at the exact same time,
+     * one connection address will be overridden
+     */
+    fn assign_address(&mut self, expire_at: u64) -> Result<Ipv4Address, AgentError> {
+        // Select random ip address between 0.1 and 255.254
+        let mut address = self.random_address();
 
-        if address.is_empty() {
-            self.set_next_ip_address(&self.base_addresses[0].clone())?;
+        // Assign another if it already exists
+        while self.address_exist(&address)? {
+            address = self.random_address();
         }
-        Ok(())
-    }
 
-    fn next_ip_address(&mut self) -> Result<Ipv4Address, AgentError> {
-        let address: Vec<u8> = self.connection.get(NEXT_IP_ADDRESS_KEY).map_err(|err| {
-            AgentError::DBError(format!("Could not get next ip address: {:?}", err))
-        })?;
+        // Assign the address
+        self.store_address(&address, expire_at)?;
 
-        let address: Ipv4Address = address.try_into().map_err(|err| {
-            AgentError::ParsingError(format!("Could not parse ipv4 address. {:?}", err))
-        })?;
-
-        let next_address = self.increase_ip_address(&address)?;
-
-        self.set_next_ip_address(&next_address)?;
+        debug!("Assigned address: {:?}", address);
 
         Ok(address)
-    }
-
-    fn reset_state(&mut self) -> Result<(), AgentError> {
-        self.set_next_ip_address(&self.base_addresses[0].clone())?;
-
-        self.base_address_index = 0;
-
-        Ok(())
     }
 }
 
 impl RedisConnectionsStateDB {
-    fn set_next_ip_address(&mut self, address: &Ipv4Address) -> Result<(), AgentError> {
-        let _: () = self
-            .connection
-            .set(NEXT_IP_ADDRESS_KEY, address)
-            .map_err(|err| {
-                AgentError::DBError(format!("Could not set next ip address. {:?}", err))
-            })?;
+    // Generate host id between 0.1 and 255.255
+    fn random_address(&self) -> Ipv4Address {
+        let mut rng = rand::thread_rng();
 
-        Ok(())
+        // Between 2 and 255
+        let host_id_1: u8 = rng.gen_range(2, 255);
+        // Between 0 and 254
+        let host_id_2: u8 = rng.gen_range(0, 254);
+
+        let address = [
+            self.gateway_ipv4[0],
+            self.gateway_ipv4[1],
+            host_id_1,
+            host_id_2,
+        ];
+
+        address
     }
 
-    fn increase_ip_address(&mut self, address: &Ipv4Address) -> Result<Ipv4Address, AgentError> {
-        let host_id = address[3];
-        let mut new_address;
+    // Check whether an address exist in REDIS
+    fn address_exist(&mut self, address: &Ipv4Address) -> Result<bool, AgentError> {
+        let address_exist = self.connection.exists(address).map_err(|err| {
+            AgentError::DBError(format!("Could not query address state. {:?}", err))
+        })?;
 
-        if host_id >= 255 {
-            if self.base_address_index >= (self.base_addresses.len() - 1) {
-                // No more ip addresses available
-                return Err(AgentError::IpError(format!("IP address out of range.")));
-            }
+        Ok(address_exist)
+    }
 
-            self.base_address_index += 1;
-            new_address = self.base_addresses[self.base_address_index].clone();
-        } else {
-            // Increase the host id
-            new_address = address.clone();
-            new_address[3] = address[3] + 1;
-        }
+    fn store_address(&mut self, address: &Ipv4Address, expire_at: u64) -> Result<(), AgentError> {
+        // Store the address
+        let _: () = self
+            .connection
+            .set(address, true)
+            .map_err(|err| AgentError::DBError(format!("Could not store ip address. {:?}", err)))?;
 
-        Ok(new_address)
+        // Set the expiration
+        let _: () = self
+            .connection
+            .expire_at(address, expire_at as usize)
+            .map_err(|err| AgentError::DBError(format!("Could address expiration. {:?}", err)))?;
+
+        Ok(())
     }
 }

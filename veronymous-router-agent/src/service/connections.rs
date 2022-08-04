@@ -18,8 +18,7 @@ pub struct RouterConnectionsService {
 impl RouterConnectionsService {
     pub async fn create(config: &VeronymousAgentConfig) -> Result<Self, AgentError> {
         // Connect to redis
-        let mut connections_state_db = RedisConnectionsStateDB::create(&config)?;
-        connections_state_db.init()?;
+        let connections_state_db = RedisConnectionsStateDB::create(&config)?;
 
         Ok(Self {
             wg_service: WireguardService::create(config).await?,
@@ -32,8 +31,14 @@ impl RouterConnectionsService {
         &mut self,
         public_key: &PublicKey,
         epoch: u64,
+        next_epoch: u64,
     ) -> Result<Ipv4Address, AgentError> {
-        let address = self.connections_state_db.next_ip_address()?;
+        debug!(
+            "Adding connection. EPOCH {}, NEXT EPOCH {}",
+            epoch, next_epoch
+        );
+
+        let address = self.connections_state_db.assign_address(next_epoch)?;
 
         debug!(
             "Connecting peer: PEER_ID {} ADDRESS {:?}",
@@ -70,14 +75,15 @@ impl RouterConnectionsService {
         // Remove the connections from the database
         self.connections_db.clear_connections(epoch)?;
 
-        // Reset the ip address
-        self.connections_state_db.reset_state()?;
-
         Ok(())
     }
 
     // Clear connections that might of been missed
-    pub async fn clear_old_connections(&mut self, epoch: u64, next_epoch: u64) -> Result<(), AgentError> {
+    pub async fn clear_old_connections(
+        &mut self,
+        epoch: u64,
+        next_epoch: u64,
+    ) -> Result<(), AgentError> {
         let stored_epochs = self.connections_db.get_stored_epochs()?;
 
         for stored_epoch in stored_epochs {

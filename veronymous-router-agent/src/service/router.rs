@@ -45,7 +45,10 @@ impl VeronymousRouterAgentService {
         let current_epoch = service.get_current_epoch(now);
         let next_epoch = current_epoch + service.epoch_length;
 
-        service.connections.clear_old_connections(current_epoch, next_epoch).await?;
+        service
+            .connections
+            .clear_old_connections(current_epoch, next_epoch)
+            .await?;
 
         Ok(service)
     }
@@ -57,8 +60,10 @@ impl VeronymousRouterAgentService {
     ) -> Result<(), AgentError> {
         debug!("Handling connection request...");
 
+        // Get epoch and next epoch
         let now = get_now_u64();
         let epoch = self.get_current_epoch(now);
+        let next_epoch = epoch + self.epoch_length;
 
         // Verify the connect request
         self.verify_connect_request(request, now, epoch).await?;
@@ -66,7 +71,7 @@ impl VeronymousRouterAgentService {
         // Add the connection
         let peer_address = self
             .connections
-            .add_connection(&request.public_key, epoch)
+            .add_connection(&request.public_key, epoch, next_epoch)
             .await?;
 
         // Construct the response

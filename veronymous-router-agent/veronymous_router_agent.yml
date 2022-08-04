@@ -1,7 +1,8 @@
 address: 127.0.0.1:7777
 
 wg_addresses:
-  - https://wg1.dev.veronymous.io:50061
+  - http://wg1.ny.veronymous.io:50061
+  #- https://wg1.dev.veronymous.io:50061
   #  - http://localhost:50061
   #- http://nbouma-vm:50051
 
@@ -14,6 +15,7 @@ wg_addresses:
 #wg_client_cert: /home/noah/deployments/veronymous/dev/certs/wireguard-node-1/tutorial/client/client.pem
 #wg_client_key: /home/noah/deployments/veronymous/dev/certs/wireguard-node-1/tutorial/client/client.key
 
+#token_info_endpoint: http://127.0.0.1:50051
 token_info_endpoint: http://127.0.0.1:50051
 token_domain: dev_domain
 
@@ -22,6 +24,9 @@ private_addresses:
   - 10.8.0.2
 #  - 10.8.1.2
 
+# The wireguard private ip
+wg_gateway_ipv4: 10.8.0.1
+
 #epoch_length: 10
 #epoch_buffer: 1
 
@@ -29,8 +34,8 @@ epoch_length: 10
 epoch_buffer: 1
 
 # The connections
-connections_redis_address: redis://default:password@172.17.0.2:6379/1
+connections_redis_address: redis://default:password@172.20.0.2:6379/1
 # For the connections state
-connections_state_redis_address: redis://default:password@172.17.0.2:6379/2
+connections_state_redis_address: redis://default:password@172.20.0.2:6379/2
 # For tracking serial numbers
-token_ids_redis_address: redis://default:password@172.17.0.2:6379/3
+token_ids_redis_address: redis://default:password@172.20.0.2:6379/3

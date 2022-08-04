@@ -51,9 +51,8 @@ impl VeronymousRouterClient {
                 if let ConnectMessage::ConnectResponse(response) = response {
                     Ok(response)
                 } else {
-                    return Err(InvalidResponse(format!("Bad response.")))
+                    return Err(InvalidResponse(format!("Bad response.")));
                 }
-
             }
             Err(e) => return Err(ConnectionError(format!("Could not connect. {:?}", e))),
         }

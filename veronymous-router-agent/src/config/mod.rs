@@ -33,7 +33,8 @@ pub struct VeronymousAgentConfig {
 
     pub token_ids_redis_address: String,
 
-    pub private_addresses: HashSet<String>,
+    // Subnet mask is 16; 0.0.0.0/16
+    pub wg_gateway_ipv4: String,
 }
 
 impl VeronymousAgentConfig {

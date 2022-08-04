@@ -42,10 +42,17 @@ impl ConnectionsStateDB for RedisConnectionsStateDB {
     fn assign_address(&mut self, expire_at: u64) -> Result<Ipv4Address, AgentError> {
         // Select random ip address between 0.1 and 255.254
         let mut address = self.random_address();
+        let mut find_address_attempts: u8 = 0;
 
         // Assign another if it already exists
+        // Maximum 10 attempts
         while self.address_exist(&address)? {
             address = self.random_address();
+            find_address_attempts += 1;
+
+            if find_address_attempts >= 20 {
+                return Err(AgentError::IpError("Could not find IP address.".to_string()));
+            }
         }
 
         // Assign the address

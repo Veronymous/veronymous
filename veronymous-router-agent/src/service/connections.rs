@@ -79,6 +79,7 @@ impl RouterConnectionsService {
     }
 
     // Clear connections that might of been missed
+    // Clear the connections that do not belong to the active epochs
     pub async fn clear_old_connections(
         &mut self,
         epoch: u64,

@@ -26,6 +26,7 @@ private_addresses:
 
 # The wireguard private ip
 wg_gateway_ipv4: 10.8.0.1
+wg_gateway_ipv6: fd5d:4d78:92de::1
 
 #epoch_length: 10
 #epoch_buffer: 1

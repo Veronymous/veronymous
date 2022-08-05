@@ -7,6 +7,9 @@ use serde::Deserialize;
 const CONFIG_ENV_VAR: &str = "VERONYMOUS_ROUTER_AGENT_CONFIG";
 const DEFAULT_CONFIG_LOCATION: &str = "veronymous_router_agent.yml";
 
+/*
+* TODO: Re-organize to contain sub-components
+*/
 #[derive(Clone, Debug, Deserialize)]
 pub struct VeronymousAgentConfig {
     pub address: String,
@@ -35,6 +38,9 @@ pub struct VeronymousAgentConfig {
 
     // Subnet mask is 16; 0.0.0.0/16
     pub wg_gateway_ipv4: String,
+
+    // Subnet mask is 112
+    pub wg_gateway_ipv6: String,
 }
 
 impl VeronymousAgentConfig {

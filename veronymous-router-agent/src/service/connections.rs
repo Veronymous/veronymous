@@ -1,4 +1,4 @@
-use veronymous_connection::model::{Ipv4Address, PublicKey};
+use veronymous_connection::model::{Ipv4Address, Ipv6Address, PublicKey};
 
 use crate::db::connections_db::redis::RedisConnectionsDB;
 use crate::db::connections_db::ConnectionsDB;
@@ -32,28 +32,29 @@ impl RouterConnectionsService {
         public_key: &PublicKey,
         epoch: u64,
         next_epoch: u64,
-    ) -> Result<Ipv4Address, AgentError> {
+    ) -> Result<(Ipv4Address, Ipv6Address), AgentError> {
         debug!(
             "Adding connection. EPOCH {}, NEXT EPOCH {}",
             epoch, next_epoch
         );
 
-        let address = self.connections_state_db.assign_address(next_epoch)?;
+        let (ipv4_address, ipv6_address) = self.connections_state_db.assign_address(next_epoch)?;
 
         debug!(
-            "Connecting peer: PEER_ID {} ADDRESS {:?}",
+            "Connecting peer: PEER_ID {} ADDRESS {:?}, {:?}",
             base64::encode(&public_key),
-            address
+            ipv4_address,
+            ipv6_address
         );
 
         // Add wireguard connection
         self.wg_service
-            .add_peer(&public_key, address.clone())
+            .add_peer(&public_key, ipv4_address.clone(), ipv6_address.clone())
             .await?;
 
         self.connections_db.store_connection(public_key, epoch)?;
 
-        Ok(address)
+        Ok((ipv4_address, ipv6_address))
     }
 
     pub async fn clear_connections(&mut self, epoch: u64) -> Result<(), AgentError> {

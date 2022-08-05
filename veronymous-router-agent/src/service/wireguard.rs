@@ -1,8 +1,8 @@
 use std::fs;
-use std::net::Ipv4Addr;
+use std::net::{Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
 use tonic::transport::{Channel, Endpoint};
-use veronymous_connection::model::{Ipv4Address, PublicKey};
+use veronymous_connection::model::{Ipv4Address, Ipv6Address, PublicKey};
 use wg_manager_service_common::wg_manager_service::wireguard_manager_service_client::WireguardManagerServiceClient;
 use wg_manager_service_common::wg_manager_service::{AddPeerRequest, RemovePeerRequest};
 
@@ -75,11 +75,16 @@ impl WireguardService {
     pub async fn add_peer(
         &mut self,
         public_key: &PublicKey,
-        address: Ipv4Address,
+        ipv4_address: Ipv4Address,
+        ipv6_address: Ipv6Address,
     ) -> Result<(), AgentError> {
         // Assemble the request
         let public_key = base64::encode(public_key);
-        let addresses = vec![Ipv4Addr::from(address).to_string()];
+
+        let addresses = vec![
+            Ipv4Addr::from(ipv4_address).to_string(),
+            Ipv6Addr::from(ipv6_address).to_string(),
+        ];
 
         let request = AddPeerRequest {
             public_key,

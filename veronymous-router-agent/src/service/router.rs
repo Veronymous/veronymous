@@ -69,13 +69,13 @@ impl VeronymousRouterAgentService {
         self.verify_connect_request(request, now, epoch).await?;
 
         // Add the connection
-        let peer_address = self
+        let (peer_v4_address, peer_v6_address) = self
             .connections
             .add_connection(&request.public_key, epoch, next_epoch)
             .await?;
 
         // Construct the response
-        let response = ConnectResponse::new(true, peer_address);
+        let response = ConnectResponse::new(true, peer_v4_address, peer_v6_address);
         let response = ConnectMessage::ConnectResponse(response);
 
         // Send the response

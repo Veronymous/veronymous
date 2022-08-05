@@ -6,11 +6,12 @@ use veronymous_token::token::VeronymousToken;
 
 const KEY_SIZE: usize = 32;
 const IPV4_ADDRESS_SIZE: usize = 4;
+const IPV6_ADDRESS_SIZE: usize = 16;
 
 const SERIALIZED_TOKEN_SIZE: usize = 544;
 
 pub const CONNECT_REQUEST_SIZE: usize = KEY_SIZE + SERIALIZED_TOKEN_SIZE;
-pub const CONNECT_RESPONSE_SIZE: usize = 1 + IPV4_ADDRESS_SIZE;
+pub const CONNECT_RESPONSE_SIZE: usize = 1 + IPV4_ADDRESS_SIZE + IPV6_ADDRESS_SIZE;
 
 pub const MIN_CONNECT_MESSAGE_SIZE: usize = 1;
 
@@ -24,13 +25,14 @@ pub const CONNECT_RESPONSE_ID: u8 = 2;
 
 pub type PublicKey = [u8; KEY_SIZE];
 pub type Ipv4Address = [u8; IPV4_ADDRESS_SIZE];
+pub type Ipv6Address = [u8; IPV6_ADDRESS_SIZE];
 
 pub trait SerializableMessage {
     fn to_bytes(&self) -> Vec<u8>;
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, ConnectionError>
-    where
-        Self: Sized;
+        where
+            Self: Sized;
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -53,8 +55,8 @@ impl SerializableMessage for ConnectMessage {
     }
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, ConnectionError>
-    where
-        Self: Sized,
+        where
+            Self: Sized,
     {
         if bytes.len() < MIN_CONNECT_MESSAGE_SIZE {
             return Err(ConnectionError::DeserializationError(format!(
@@ -123,8 +125,8 @@ impl SerializableMessage for ConnectRequest {
     }
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, ConnectionError>
-    where
-        Self: Sized,
+        where
+            Self: Sized,
     {
         if bytes.len() != CONNECT_REQUEST_SIZE {
             return Err(ConnectionError::DeserializationError(format!(
@@ -159,12 +161,19 @@ impl SerializableMessage for ConnectRequest {
 #[derive(Clone, Debug, PartialEq)]
 pub struct ConnectResponse {
     pub accepted: bool,
-    pub address: Ipv4Address,
+
+    pub ipv4_address: Ipv4Address,
+
+    pub ipv6_address: Ipv6Address,
 }
 
 impl ConnectResponse {
-    pub fn new(accepted: bool, address: Ipv4Address) -> Self {
-        Self { accepted, address }
+    pub fn new(accepted: bool, ipv4_address: Ipv4Address, ipv6_address: Ipv6Address) -> Self {
+        Self {
+            accepted,
+            ipv4_address,
+            ipv6_address,
+        }
     }
 }
 
@@ -172,14 +181,15 @@ impl SerializableMessage for ConnectResponse {
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::with_capacity(CONNECT_RESPONSE_SIZE);
         bytes.push((self.accepted as u8).to_be());
-        bytes.extend_from_slice(&self.address);
+        bytes.extend_from_slice(&self.ipv4_address);
+        bytes.extend_from_slice(&self.ipv6_address);
 
         bytes
     }
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, ConnectionError>
-    where
-        Self: Sized,
+        where
+            Self: Sized,
     {
         if bytes.len() != CONNECT_RESPONSE_SIZE {
             return Err(ConnectionError::DeserializationError(format!(
@@ -189,6 +199,7 @@ impl SerializableMessage for ConnectResponse {
             )));
         }
 
+        // Parse result
         let accepted = match bytes[0] {
             0 => false,
             1 => true,
@@ -199,11 +210,14 @@ impl SerializableMessage for ConnectResponse {
             }
         };
 
-        let address = &bytes[1..5];
+        // Parse the addresses
+        let ipv4_address = &bytes[1..5];
+        let ipv6_address = &bytes[5..21];
 
         Ok(Self {
             accepted,
-            address: address.try_into().unwrap(),
+            ipv4_address: ipv4_address.try_into().unwrap(),
+            ipv6_address: ipv6_address.try_into().unwrap(),
         })
     }
 }
@@ -280,14 +294,15 @@ mod tests {
                 191, 114, 176, 17, 164, 112, 132, 121, 108, 153, 216, 152, 183, 27, 107, 174, 2,
                 105, 133, 249, 69, 238, 16, 81, 226, 255, 133, 61,
             ])
-            .unwrap(),
+                .unwrap(),
         })
     }
 
     fn connect_response() -> ConnectMessage {
         ConnectMessage::ConnectResponse(ConnectResponse {
             accepted: true,
-            address: [10, 0, 8, 1],
+            ipv4_address: [10, 0, 8, 1],
+            ipv6_address: [253, 93, 77, 120, 146, 222, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
         })
     }
 }

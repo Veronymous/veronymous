@@ -10,4 +10,7 @@ pub enum ClientError {
 
     #[error("Invalid response. {0}")]
     InvalidResponse(String),
+
+    #[error("Configuration error. {0}")]
+    ConfigError(String),
 }

@@ -2,9 +2,6 @@ address: 127.0.0.1:7777
 
 wg_addresses:
   - http://wg1.ny.veronymous.io:50061
-  #- https://wg1.dev.veronymous.io:50061
-  #  - http://localhost:50061
-  #- http://nbouma-vm:50051
 
 #wg_tls_ca: /home/noah/deployments/veronymous/dev/wg1/certs/ca/ca.pem
 #wg_tls_ca: /home/noah/deployments/veronymous/dev/certs/wireguard-node-1/tutorial/my_ca.pem
@@ -15,14 +12,12 @@ wg_addresses:
 #wg_client_cert: /home/noah/deployments/veronymous/dev/certs/wireguard-node-1/tutorial/client/client.pem
 #wg_client_key: /home/noah/deployments/veronymous/dev/certs/wireguard-node-1/tutorial/client/client.key
 
+tls_cert: ./resources/certs/server.pem
+tls_cert_key: ./resources/certs/server.key
+
 #token_info_endpoint: http://127.0.0.1:50051
 token_info_endpoint: http://127.0.0.1:50051
 token_domain: dev_domain
-
-# Private address ranges
-private_addresses:
-  - 10.8.0.2
-#  - 10.8.1.2
 
 # The wireguard private ip
 wg_gateway_ipv4: 10.8.0.1

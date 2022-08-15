@@ -8,6 +8,7 @@ use std::time::Duration;
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 use tokio::sync::RwLock;
+use tokio_rustls::server::TlsStream;
 use veronymous_connection::model::{
     ConnectMessage, ConnectRequest, ConnectResponse, SerializableMessage,
 };
@@ -56,7 +57,7 @@ impl VeronymousRouterAgentService {
     pub async fn handle_connect_request(
         &mut self,
         request: &ConnectRequest,
-        socket: &mut TcpStream,
+        socket: &mut TlsStream<TcpStream>,
     ) -> Result<(), AgentError> {
         debug!("Handling connection request...");
 

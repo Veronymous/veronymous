@@ -11,6 +11,8 @@ thiserror = "1.0.30"
 config = "0.11.0"
 # TODO: Set used features only
 tokio = { version = "1.15.0", features = ["full"] }
+tokio-rustls = "0.23.4"
+rustls-pemfile = "1.0.1"
 base64 = "0.13.0"
 log = "0.4.14"
 env_logger = "0.9.0"
@@ -30,7 +32,7 @@ path = "../veronymous-token/crypto/ps-signatures"
 
 [dependencies.wg_manager_service_common]
 git = "ssh://git@github.com/boumba100/wireguard-manager-service.git"
-rev = "4d13e768d1846320e5660e17bfe5c0ed7256ddd0"
+rev  = "4d13e768d1846320e5660e17bfe5c0ed7256ddd0"
 
 [build-dependencies]
 tonic-build = "0.6"

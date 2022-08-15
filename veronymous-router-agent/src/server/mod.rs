@@ -1,11 +1,17 @@
 use crate::service::router::VeronymousRouterAgentService;
 use crate::{AgentError, VeronymousAgentConfig};
+use rustls_pemfile::{certs, rsa_private_keys};
+use std::fs::File;
+use std::io::BufReader;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::io::AsyncReadExt;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::Mutex;
 use tokio::time::Instant;
+use tokio_rustls::rustls::{Certificate, PrivateKey, ServerConfig};
+use tokio_rustls::server::TlsStream;
+use tokio_rustls::TlsAcceptor;
 use veronymous_connection::model::{ConnectMessage, SerializableMessage, CONNECT_REQUEST_SIZE};
 
 // TODO: Review shared state - https://tokio.rs/tokio/tutorial/shared-state
@@ -19,6 +25,8 @@ type RouterService = Arc<Mutex<VeronymousRouterAgentService>>;
 pub struct VeronymousRouterAgentServer {
     address: String,
 
+    tls_acceptor: TlsAcceptor,
+
     service: RouterService,
 
     epoch_length: u64,
@@ -30,6 +38,7 @@ impl VeronymousRouterAgentServer {
 
         Ok(Self {
             address: config.address.clone(),
+            tls_acceptor: create_tls_acceptor(&config)?,
             service: Arc::new(Mutex::new(
                 VeronymousRouterAgentService::create(&config).await?,
             )),
@@ -52,7 +61,8 @@ impl VeronymousRouterAgentServer {
 
     async fn listen(&mut self, listener: &TcpListener) -> Result<(), AgentError> {
         loop {
-            let (mut socket, address) = match listener.accept().await {
+            // Wait for tcp connection
+            let (socket, address) = match listener.accept().await {
                 Ok(connection) => connection,
                 Err(err) => {
                     info!("Could not accept connection. {}", err.to_string());
@@ -60,7 +70,17 @@ impl VeronymousRouterAgentServer {
                 }
             };
 
-            debug!("Connected to {:?}", address);
+            // Wait for tls connection
+            let tls_acceptor = self.tls_acceptor.clone();
+            let mut socket = match tls_acceptor.accept(socket).await {
+                Ok(socket) => socket,
+                Err(err) => {
+                    debug!("Could not accept TLS connection. {:?}", err);
+                    continue;
+                }
+            };
+
+            debug!("Accepted connection from {:?}", address);
 
             let service = self.service.clone();
 
@@ -109,7 +129,7 @@ impl VeronymousRouterAgentServer {
 
     async fn handle_connection(
         service: RouterService,
-        socket: &mut TcpStream,
+        socket: &mut TlsStream<TcpStream>,
     ) -> Result<(), AgentError> {
         // Read the request
         let (request_size, request_bytes) = Self::read_request(socket).await?;
@@ -124,7 +144,7 @@ impl VeronymousRouterAgentServer {
         service: RouterService,
         request_size: usize,
         request_bytes: &[u8; REQUEST_SIZE],
-        socket: &mut TcpStream,
+        socket: &mut TlsStream<TcpStream>,
     ) -> Result<(), AgentError> {
         // Initial validation
         if request_size != REQUEST_SIZE {
@@ -158,7 +178,7 @@ impl VeronymousRouterAgentServer {
 
     // Only one request (ConnectRequest) exists for now
     async fn read_request(
-        socket: &mut TcpStream,
+        socket: &mut TlsStream<TcpStream>,
     ) -> Result<(usize, [u8; REQUEST_SIZE]), AgentError> {
         let mut buffer = [0; REQUEST_SIZE];
 
@@ -184,4 +204,58 @@ impl VeronymousRouterAgentServer {
 
         now_instant + Duration::from_secs(time_until_next_epoch)
     }
+}
+
+fn create_tls_acceptor(config: &VeronymousAgentConfig) -> Result<TlsAcceptor, AgentError> {
+    // Load the tls config
+    let tls_config = create_tls_server_config(config)?;
+
+    Ok(TlsAcceptor::from(Arc::new(tls_config)))
+}
+
+fn create_tls_server_config(config: &VeronymousAgentConfig) -> Result<ServerConfig, AgentError> {
+    // Load certs
+    let certs = load_certs(&config.tls_cert)?;
+
+    // Load the cert key
+    let private_key = load_cert_key(&config.tls_cert_key)?;
+
+    // Assemble the config
+    let server_config = ServerConfig::builder()
+        .with_safe_defaults()
+        .with_no_client_auth()
+        .with_single_cert(certs, private_key)
+        .map_err(|e| {
+            AgentError::ConfigError(format!("Could not create server tls config. {:?}", e))
+        })?;
+
+    Ok(server_config)
+}
+
+fn load_certs(certs_path: &String) -> Result<Vec<Certificate>, AgentError> {
+    let file = File::open(certs_path)
+        .map_err(|e| AgentError::ConfigError(format!("Could not load cert file. {:?}", e)))?;
+
+    let raw_certs = certs(&mut BufReader::new(file))
+        .map_err(|e| AgentError::ConfigError(format!("Could not load certs. {:?}", e)))?;
+
+    let mut certs = Vec::with_capacity(raw_certs.len());
+
+    for cert in raw_certs {
+        certs.push(Certificate(cert));
+    }
+
+    Ok(certs)
+}
+
+fn load_cert_key(key_path: &String) -> Result<PrivateKey, AgentError> {
+    let file = File::open(key_path)
+        .map_err(|e| AgentError::ConfigError(format!("Could not load key file. {:?}", e)))?;
+
+    let mut raw_keys = rsa_private_keys(&mut BufReader::new(file))
+        .map_err(|e| AgentError::ConfigError(format!("Could not load private key. {:?}", e)))?;
+
+    let private_key = PrivateKey(raw_keys.remove(0));
+
+    Ok(private_key)
 }

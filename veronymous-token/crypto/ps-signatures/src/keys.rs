@@ -81,8 +81,9 @@ impl Serialize for PsParams {
     {
         let bytes =
             Serializable::serialize(self).map_err(|e| S::Error::custom(format!("{:?}", e)))?;
+        let string = base64::encode(&bytes);
 
-        serializer.serialize_bytes(&bytes)
+        serializer.serialize_str(string.as_str())
     }
 }
 
@@ -92,7 +93,30 @@ impl<'de> Visitor<'de> for PsParamsVisitor {
     type Value = PsParams;
 
     fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
-        formatter.write_str("Expecting a byte array.")
+        formatter.write_str("Expecting a string.")
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        self.visit_borrowed_str(v)
+    }
+
+    fn visit_borrowed_str<E>(self, string: &'de str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        let bytes = base64::decode(string).map_err(|e| E::custom(format!("{:?}", e)))?;
+
+        self.visit_bytes(&bytes)
+    }
+
+    fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        self.visit_borrowed_str(&v)
     }
 
     fn visit_bytes<E>(self, bytes: &[u8]) -> Result<Self::Value, E>
@@ -108,7 +132,7 @@ impl<'de> Deserialize<'de> for PsParams {
     where
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_bytes(PsParamsVisitor)
+        deserializer.deserialize_string(PsParamsVisitor)
     }
 }
 
@@ -325,8 +349,9 @@ impl Serialize for PsPublicKey {
     {
         let bytes =
             Serializable::serialize(self).map_err(|e| S::Error::custom(format!("{:?}", e)))?;
+        let string = base64::encode(&bytes);
 
-        serializer.serialize_bytes(&bytes)
+        serializer.serialize_str(string.as_str())
     }
 }
 
@@ -336,7 +361,30 @@ impl<'de> Visitor<'de> for PsPublicKeyVisitor {
     type Value = PsPublicKey;
 
     fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
-        formatter.write_str("Expecting a byte array.")
+        formatter.write_str("Expecting a string.")
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        self.visit_borrowed_str(v)
+    }
+
+    fn visit_borrowed_str<E>(self, string: &'de str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        let bytes = base64::decode(string).map_err(|e| E::custom(format!("{:?}", e)))?;
+
+        self.visit_bytes(&bytes)
+    }
+
+    fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        self.visit_borrowed_str(&v)
     }
 
     fn visit_bytes<E>(self, bytes: &[u8]) -> Result<Self::Value, E>
@@ -352,7 +400,7 @@ impl<'de> Deserialize<'de> for PsPublicKey {
     where
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_bytes(PsPublicKeyVisitor)
+        deserializer.deserialize_string(PsPublicKeyVisitor)
     }
 }
 

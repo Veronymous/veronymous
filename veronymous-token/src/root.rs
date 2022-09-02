@@ -5,6 +5,7 @@ use crate::token::{
     compute_serial_number_generator, ProofRootToken, ProofSerialNumber, VeronymousToken,
 };
 use crate::utils::{read_fr, read_g1_point};
+use base64;
 use commitments::pedersen_commitment::PedersenCommitmentCommitting;
 use commitments::pok_pedersen_commitment::ProverCommitting;
 use crypto_common::{hash_to_fr, rand_non_zero_fr};
@@ -15,7 +16,7 @@ use ps_signatures::keys::{PsParams, PsPublicKey};
 use ps_signatures::pok_sig::PsPokOfSignatureProof;
 use ps_signatures::signature::PsSignature;
 use rand::CryptoRng;
-use serde::de::Visitor;
+use serde::de::{Error, Visitor};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::Formatter;
 use std::io::Cursor;
@@ -198,8 +199,9 @@ impl Serialize for RootVeronymousToken {
         S: Serializer,
     {
         let bytes = Serializable::serialize(self);
+        let string = base64::encode(&bytes);
 
-        serializer.serialize_bytes(&bytes)
+        serializer.serialize_str(string.as_str())
     }
 }
 
@@ -209,7 +211,30 @@ impl<'de> Visitor<'de> for RootVeronymousTokenVisitor {
     type Value = RootVeronymousToken;
 
     fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
-        formatter.write_str("Expecting a byte array.")
+        formatter.write_str("Expecting a string.")
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+    where
+        E: Error,
+    {
+        self.visit_borrowed_str(v)
+    }
+
+    fn visit_borrowed_str<E>(self, string: &'de str) -> Result<Self::Value, E>
+    where
+        E: Error,
+    {
+        let bytes = base64::decode(string).map_err(|e| E::custom(format!("{:?}", e)))?;
+
+        self.visit_bytes(&bytes)
+    }
+
+    fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
+    where
+        E: Error,
+    {
+        self.visit_borrowed_str(&v)
     }
 
     fn visit_bytes<E>(self, bytes: &[u8]) -> Result<Self::Value, E>
@@ -226,6 +251,6 @@ impl<'de> Deserialize<'de> for RootVeronymousToken {
     where
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_bytes(RootVeronymousTokenVisitor)
+        deserializer.deserialize_string(RootVeronymousTokenVisitor)
     }
 }

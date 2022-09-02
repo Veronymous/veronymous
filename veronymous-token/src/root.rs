@@ -16,8 +16,7 @@ use ps_signatures::pok_sig::PsPokOfSignatureProof;
 use ps_signatures::signature::PsSignature;
 use rand::CryptoRng;
 use serde::de::Visitor;
-use serde::ser::Error;
-use serde::{Serialize, Serializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::Formatter;
 use std::io::Cursor;
 
@@ -219,5 +218,14 @@ impl<'de> Visitor<'de> for RootVeronymousTokenVisitor {
     {
         <RootVeronymousToken as Serializable>::deserialize(bytes)
             .map_err(|e| E::custom(format!("{:?}", e)))
+    }
+}
+
+impl<'de> Deserialize<'de> for RootVeronymousToken {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_bytes(RootVeronymousTokenVisitor)
     }
 }

@@ -347,6 +347,15 @@ impl<'de> Visitor<'de> for PsPublicKeyVisitor {
     }
 }
 
+impl<'de> Deserialize<'de> for PsPublicKey {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_bytes(PsPublicKeyVisitor)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::keys::{PsParams, PsPublicKey, PsSigningKey};

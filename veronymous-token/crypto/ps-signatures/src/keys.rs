@@ -6,6 +6,10 @@ use pairing_plus::bls12_381::{G1, G2};
 use pairing_plus::serdes::SerDes;
 use pairing_plus::CurveProjective;
 use rand::CryptoRng;
+use serde::de::Visitor;
+use serde::ser::Error;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::fmt::Formatter;
 use std::io::Cursor;
 
 use crate::error::PsSignatureError;
@@ -67,6 +71,44 @@ impl Serializable for PsParams {
             read_g2_point(&mut cursor).map_err(|e| DeserializationError(format!("{:?}", e)))?;
 
         Ok(Self { g, g_tilde })
+    }
+}
+
+impl Serialize for PsParams {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let bytes =
+            Serializable::serialize(self).map_err(|e| S::Error::custom(format!("{:?}", e)))?;
+
+        serializer.serialize_bytes(&bytes)
+    }
+}
+
+struct PsParamsVisitor;
+
+impl<'de> Visitor<'de> for PsParamsVisitor {
+    type Value = PsParams;
+
+    fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
+        formatter.write_str("Expecting a byte array.")
+    }
+
+    fn visit_bytes<E>(self, bytes: &[u8]) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        <PsParams as Serializable>::deserialize(bytes).map_err(|e| E::custom(format!("{:?}", e)))
+    }
+}
+
+impl<'de> Deserialize<'de> for PsParams {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_bytes(PsParamsVisitor)
     }
 }
 
@@ -273,6 +315,35 @@ impl Serializable for PsPublicKey {
             x_cap_tilde,
             y_cap_tilde,
         })
+    }
+}
+
+impl Serialize for PsPublicKey {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let bytes =
+            Serializable::serialize(self).map_err(|e| S::Error::custom(format!("{:?}", e)))?;
+
+        serializer.serialize_bytes(&bytes)
+    }
+}
+
+struct PsPublicKeyVisitor;
+
+impl<'de> Visitor<'de> for PsPublicKeyVisitor {
+    type Value = PsPublicKey;
+
+    fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
+        formatter.write_str("Expecting a byte array.")
+    }
+
+    fn visit_bytes<E>(self, bytes: &[u8]) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        <PsPublicKey as Serializable>::deserialize(bytes).map_err(|e| E::custom(format!("{:?}", e)))
     }
 }
 

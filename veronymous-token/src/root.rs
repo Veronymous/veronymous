@@ -15,6 +15,10 @@ use ps_signatures::keys::{PsParams, PsPublicKey};
 use ps_signatures::pok_sig::PsPokOfSignatureProof;
 use ps_signatures::signature::PsSignature;
 use rand::CryptoRng;
+use serde::de::Visitor;
+use serde::ser::Error;
+use serde::{Serialize, Serializer};
+use std::fmt::Formatter;
 use std::io::Cursor;
 
 const SERIALIZED_ROOT_TOKEN_SIZE: usize = 128;
@@ -186,5 +190,34 @@ impl Serializable for RootVeronymousToken {
             token_id,
             signature,
         })
+    }
+}
+
+impl Serialize for RootVeronymousToken {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let bytes = Serializable::serialize(self);
+
+        serializer.serialize_bytes(&bytes)
+    }
+}
+
+struct RootVeronymousTokenVisitor;
+
+impl<'de> Visitor<'de> for RootVeronymousTokenVisitor {
+    type Value = RootVeronymousToken;
+
+    fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
+        formatter.write_str("Expecting a byte array.")
+    }
+
+    fn visit_bytes<E>(self, bytes: &[u8]) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        <RootVeronymousToken as Serializable>::deserialize(bytes)
+            .map_err(|e| E::custom(format!("{:?}", e)))
     }
 }

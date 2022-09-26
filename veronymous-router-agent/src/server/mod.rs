@@ -5,7 +5,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use tokio::io::AsyncReadExt;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::Mutex;
 use tokio::time::Instant;
@@ -88,11 +88,27 @@ impl VeronymousRouterAgentServer {
                 match Self::handle_connection(service, &mut socket).await {
                     Err(err) => {
                         info!("{:?}", err);
+                        Self::close_connection(&mut socket).await;
                     }
                     _ => {}
                 };
             });
         }
+    }
+
+    async fn close_connection(socket: &mut TlsStream<TcpStream>) {
+        match socket.write_u8(0).await {
+            Ok(_) => {}
+            Err(e) => {
+                error!("Could not write error code. {:?}", e);
+            }
+        };
+        match socket.flush().await {
+            Ok(_) => {}
+            Err(e) => {
+                error!("Could not flush connection. {:?}", e);
+            }
+        };
     }
 
     /*

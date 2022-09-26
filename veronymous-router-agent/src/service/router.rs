@@ -83,6 +83,9 @@ impl VeronymousRouterAgentService {
         socket.write_all(&response.to_bytes()).await.map_err(|e| {
             AgentError::IpError(format!("Could not send response. {}", e.to_string()))
         })?;
+        socket.flush().await.map_err(|e| {
+            AgentError::IpError(format!("Could not flush socket. {}", e.to_string()))
+        })?;
 
         Ok(())
     }

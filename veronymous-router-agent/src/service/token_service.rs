@@ -4,6 +4,7 @@ use crate::service::grpc::token_service::TokenInfoRequest;
 use crate::{AgentError, VeronymousAgentConfig};
 use ps_signatures::keys::{PsParams, PsPublicKey};
 use ps_signatures::serde::Serializable;
+use std::fs;
 use std::str::FromStr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::time::Instant;
@@ -25,9 +26,24 @@ pub struct TokenService {
 
 impl TokenService {
     pub async fn create(config: &VeronymousAgentConfig) -> Result<Self, AgentError> {
-        let endpoint = Endpoint::from_str(&config.token_info_endpoint).map_err(|e| {
-            AgentError::ParsingError(format!("Could not parse token service endpoint. {:?}", e))
-        })?;
+        // Tls config
+        let ca = fs::read(&config.token_info_endpoint_ca).unwrap();
+        let ca = tonic::transport::Certificate::from_pem(ca);
+
+        // TLS authentication credentials
+        let auth_cert = fs::read(&config.token_info_endpoint_auth_cert).unwrap();
+        let auth_cert_key = fs::read(&config.token_info_endpoint_auth_key).unwrap();
+
+        let auth_id = tonic::transport::Identity::from_pem(&auth_cert, &auth_cert_key);
+
+        let tls_config = tonic::transport::ClientTlsConfig::new()
+            .ca_certificate(ca)
+            .identity(auth_id);
+
+        let endpoint = Endpoint::from_str(&config.token_info_endpoint)
+            .unwrap()
+            .tls_config(tls_config.clone())
+            .unwrap();
 
         let client = VeronymousTokenInfoServiceClient::connect(endpoint)
             .await

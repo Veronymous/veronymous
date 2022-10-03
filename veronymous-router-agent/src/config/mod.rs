@@ -28,6 +28,12 @@ pub struct VeronymousAgentConfig {
 
     pub token_info_endpoint: String,
 
+    pub token_info_endpoint_ca: String,
+
+    pub token_info_endpoint_auth_cert: String,
+
+    pub token_info_endpoint_auth_key: String,
+
     pub token_domain: String,
 
     pub epoch_length: u64,

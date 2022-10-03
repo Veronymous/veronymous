@@ -9,6 +9,7 @@ mod service;
 
 use grpc::veronymous_token_info_service::veronymous_token_info_service_server::VeronymousTokenInfoServiceServer;
 use grpc::veronymous_token_service::veronymous_token_service_server::VeronymousTokenServiceServer;
+use std::fs;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 use tonic::transport::Server;
@@ -40,9 +41,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         VeronymousTokenInfoServiceController::new(kms.clone(), &config),
     );
 
+    // TLS Config
+
+    // Encryption
+    let cert = fs::read(&config.tls_cert).unwrap();
+    let key = fs::read(&config.tls_key).unwrap();
+
+    let id = tonic::transport::Identity::from_pem(cert, key);
+    let tls_config = tonic::transport::ServerTlsConfig::new().identity(id);
+
+    // Auth
+    let ca = fs::read(&config.client_ca).unwrap();
+    let ca = tonic::transport::Certificate::from_pem(ca);
+    let tls_config = tls_config.client_ca_root(ca);
+
     info!("Starting server on {}:{}", config.host, config.port);
 
     Server::builder()
+        .tls_config(tls_config)
+        .unwrap()
         .add_service(token_controller)
         .add_service(token_info_controller)
         .serve(SocketAddr::new(config.host, config.port))

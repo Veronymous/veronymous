@@ -11,6 +11,13 @@ pub struct VeronymousTokenServiceConfig {
 
     pub port: u16,
 
+    pub tls_key: String,
+
+    pub tls_cert: String,
+
+    // Client ca for tls authentication
+    pub client_ca: String,
+
     pub key_file: String,
 
     pub key_lifetime: u64,

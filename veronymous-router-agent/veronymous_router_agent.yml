@@ -17,6 +17,10 @@ tls_cert_key: ./resources/certs/server.key
 
 #token_info_endpoint: http://127.0.0.1:50051
 token_info_endpoint: http://127.0.0.1:50051
+token_info_endpoint_ca: /home/noah/mix-net/veronymous-dev/scripts/ca.pem
+token_info_endpoint_auth_cert: /home/noah/mix-net/veronymous-dev/scripts/server.pem
+token_info_endpoint_auth_key: /home/noah/mix-net/veronymous-dev/scripts/server.key
+
 token_domain: dev_domain
 
 # The wireguard private ip

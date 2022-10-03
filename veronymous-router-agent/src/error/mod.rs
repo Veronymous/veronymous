@@ -23,9 +23,6 @@ pub enum AgentError {
     #[error("Database error. {0}")]
     DBError(String),
 
-    #[error("Parsing error. {0}")]
-    ParsingError(String),
-
     #[error("Service error. {0}")]
     ServiceError(String),
 

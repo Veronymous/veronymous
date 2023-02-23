@@ -3,23 +3,23 @@ address: 127.0.0.1:7777
 wg_addresses:
   - http://wg1.ny.veronymous.io:50061
 
-#wg_tls_ca: /home/noah/deployments/veronymous/dev/wg1/certs/ca/ca.pem
-#wg_tls_ca: /home/noah/deployments/veronymous/dev/certs/wireguard-node-1/tutorial/my_ca.pem
+#wg_tls_ca: /home/noah/deployments/veronymous/dev/wg1/tls/ca/ca.pem
+#wg_tls_ca: /home/noah/deployments/veronymous/dev/tls/wireguard-node-1/tutorial/my_ca.pem
 
-#wg_client_cert: /home/noah/deployments/veronymous/dev/wg1/certs/client/client.pem
-#wg_client_key: /home/noah/deployments/veronymous/dev/wg1/certs/client/client.key
+#wg_client_cert: /home/noah/deployments/veronymous/dev/wg1/tls/client/client.pem
+#wg_client_key: /home/noah/deployments/veronymous/dev/wg1/tls/client/client.key
 
-#wg_client_cert: /home/noah/deployments/veronymous/dev/certs/wireguard-node-1/tutorial/client/client.pem
-#wg_client_key: /home/noah/deployments/veronymous/dev/certs/wireguard-node-1/tutorial/client/client.key
+#wg_client_cert: /home/noah/deployments/veronymous/dev/tls/wireguard-node-1/tutorial/client/client.pem
+#wg_client_key: /home/noah/deployments/veronymous/dev/tls/wireguard-node-1/tutorial/client/client.key
 
-tls_cert: ./resources/certs/server.pem
-tls_cert_key: ./resources/certs/server.key
+tls_cert: ./resources/tls/server.pem
+tls_cert_key: ./resources/tls/server.key
 
 #token_info_endpoint: http://127.0.0.1:50051
-token_info_endpoint: http://127.0.0.1:50051
-token_info_endpoint_ca: /home/noah/mix-net/veronymous-dev/scripts/ca.pem
-token_info_endpoint_auth_cert: /home/noah/mix-net/veronymous-dev/scripts/server.pem
-token_info_endpoint_auth_key: /home/noah/mix-net/veronymous-dev/scripts/server.key
+token_info_endpoint: https://localhost.veronymous.io:30041
+token_info_endpoint_ca: /home/noah/mix-net/veronymous-token-issuer/token-issuer/certs/tls/tls_ca.pem
+token_info_endpoint_auth_cert: ./resources/token_issuer/token_issuer_client.pem
+token_info_endpoint_auth_key: ./resources/token_issuer/token_issuer_client.key
 
 token_domain: dev_domain
 

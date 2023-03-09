@@ -1,7 +1,8 @@
 use crate::db::connections_db::ConnectionsDB;
-use crate::AgentError;
+use crate::error::AgentError;
+use crate::error::AgentError::{DBError, InitializationError};
+use crate::wireguard::WGKey;
 use redis::{Commands, Connection};
-use veronymous_connection::model::PublicKey;
 
 pub struct RedisConnectionsDB {
     connection: Connection,
@@ -9,33 +10,32 @@ pub struct RedisConnectionsDB {
 
 impl RedisConnectionsDB {
     pub fn create(address: &String) -> Result<Self, AgentError> {
-        let client = redis::Client::open(address.as_str()).map_err(|err| {
-            AgentError::InitializationError(format!("Could not connect to redis. {:?}", err))
-        })?;
+        let client = redis::Client::open(address.as_str())
+            .map_err(|err| InitializationError(format!("Could not connect to redis. {:?}", err)))?;
 
-        let connection = client.get_connection().map_err(|err| {
-            AgentError::InitializationError(format!("Could not connect to redis. {:?}", err))
-        })?;
+        let connection = client
+            .get_connection()
+            .map_err(|err| InitializationError(format!("Could not connect to redis. {:?}", err)))?;
 
         Ok(Self { connection })
     }
 }
 
 impl ConnectionsDB for RedisConnectionsDB {
-    fn store_connection(&mut self, public_key: &PublicKey, epoch: u64) -> Result<(), AgentError> {
+    fn store_connection(&mut self, public_key: &WGKey, epoch: u64) -> Result<(), AgentError> {
         let _: () = self
             .connection
             .lpush(epoch, public_key)
-            .map_err(|err| AgentError::DBError(format!("Could not store connection. {:?}", err)))?;
+            .map_err(|err| DBError(format!("Could not store connection. {:?}", err)))?;
 
         Ok(())
     }
 
-    fn get_connections(&mut self, epoch: u64) -> Result<Vec<PublicKey>, AgentError> {
+    fn get_connections(&mut self, epoch: u64) -> Result<Vec<WGKey>, AgentError> {
         let raw_public_keys: Vec<Vec<u8>> = self
             .connection
             .lrange(epoch, 0, u32::MAX as isize)
-            .map_err(|err| AgentError::DBError(format!("Could not read connections. {:?}", err)))?;
+            .map_err(|err| DBError(format!("Could not read connections. {:?}", err)))?;
 
         let mut public_keys = Vec::with_capacity(raw_public_keys.len());
 
@@ -57,17 +57,18 @@ impl ConnectionsDB for RedisConnectionsDB {
 
     fn clear_connections(&mut self, epoch: u64) -> Result<(), AgentError> {
         // Delete the list
-        self.connection.del(epoch).map_err(|err| {
-            AgentError::DBError(format!("Could not remove connections. {:?}", err))
-        })?;
+        self.connection
+            .del(epoch)
+            .map_err(|err| DBError(format!("Could not remove connections. {:?}", err)))?;
 
         Ok(())
     }
 
     fn get_stored_epochs(&mut self) -> Result<Vec<u64>, AgentError> {
-        let epochs: Vec<u64> = self.connection.keys("*").map_err(|err| {
-            AgentError::DBError(format!("Could not find stored epochs. {:?}", err))
-        })?;
+        let epochs: Vec<u64> = self
+            .connection
+            .keys("*")
+            .map_err(|err| DBError(format!("Could not find stored epochs. {:?}", err)))?;
 
         Ok(epochs)
     }

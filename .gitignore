@@ -1,4 +1,4 @@
 /target
 /Cargo.lock
 .idea
-/veronymous-token-service/keys.db/
+/veronymous-token-service-dep/keys.db/

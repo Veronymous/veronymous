@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Test token package
+# Test token_issuer package
 cargo test --manifest-path veronymous-token/Cargo.toml
 cargo test --manifest-path veronymous-token/crypto/Cargo.toml
 cargo test --manifest-path veronymous-token/crypto/bb-signatures/Cargo.toml

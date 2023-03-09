@@ -1,9 +1,10 @@
+use crate::config::RouterAgentConfig;
 use crate::db::connections_state_db::ConnectionsStateDB;
-use crate::{AgentError, VeronymousAgentConfig};
+use crate::error::AgentError;
+use crate::error::AgentError::IpError;
 use rand::Rng;
 use redis::{Commands, Connection};
 use std::net::{Ipv4Addr, Ipv6Addr};
-use veronymous_connection::model::{Ipv4Address, Ipv6Address};
 
 /*
 * Subnet mask for ipv4 is 16 bit.
@@ -12,21 +13,21 @@ use veronymous_connection::model::{Ipv4Address, Ipv6Address};
 * NOTE: Assigns same 2 bytes host id for ipv6 and ipv4
 */
 pub struct RedisConnectionsStateDB {
-    gateway_ipv4: Ipv4Address,
+    gateway_ipv4: [u8; 4],
 
-    gateway_ipv6: Ipv6Address,
+    gateway_ipv6: [u8; 16],
 
     connection: Connection,
 }
 
 impl RedisConnectionsStateDB {
-    pub fn create(config: &VeronymousAgentConfig) -> Result<Self, AgentError> {
+    pub fn create(config: &RouterAgentConfig) -> Result<Self, AgentError> {
         // Parse the gateway addresses
         let gateway_ipv4: Ipv4Addr = config.wg_gateway_ipv4.parse().unwrap();
-        let gateway_ipv4: Ipv4Address = gateway_ipv4.octets();
+        let gateway_ipv4 = gateway_ipv4.octets();
 
         let gateway_ipv6: Ipv6Addr = config.wg_gateway_ipv6.parse().unwrap();
-        let gateway_ipv6: Ipv6Address = gateway_ipv6.octets();
+        let gateway_ipv6 = gateway_ipv6.octets();
 
         let client = redis::Client::open(config.connections_state_redis_address.as_str()).map_err(
             |err| AgentError::InitializationError(format!("Could not connect to redis. {:?}", err)),
@@ -49,7 +50,7 @@ impl ConnectionsStateDB for RedisConnectionsStateDB {
      * NOTE: Possible race condition: If two agents create an address at the exact same time,
      * one connection address will be overridden
      */
-    fn assign_address(&mut self, expire_at: u64) -> Result<(Ipv4Address, Ipv6Address), AgentError> {
+    fn assign_address(&mut self, expire_at: u64) -> Result<(Ipv4Addr, Ipv6Addr), AgentError> {
         // Select random ip address
         let mut addresses = self.random_ip_addresses();
         let mut host_id: [u8; 2] = [addresses.0[2], addresses.0[3]];
@@ -64,21 +65,19 @@ impl ConnectionsStateDB for RedisConnectionsStateDB {
             find_address_attempts += 1;
 
             if find_address_attempts >= 20 {
-                return Err(AgentError::IpError(
-                    "Could not find IP address.".to_string(),
-                ));
+                return Err(IpError("Could not find IP address.".to_string()));
             }
         }
 
         // Assign the address
         self.store_host_id(&host_id, expire_at)?;
 
-        Ok((addresses.0, addresses.1))
+        Ok((addresses.0.into(), addresses.1.into()))
     }
 }
 
 impl RedisConnectionsStateDB {
-    fn random_ip_addresses(&self) -> (Ipv4Address, Ipv6Address) {
+    fn random_ip_addresses(&self) -> ([u8; 4], [u8; 16]) {
         let host_id = Self::random_host_id();
 
         // Ipv4

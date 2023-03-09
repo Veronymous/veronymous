@@ -6,23 +6,21 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-serde = { version = "1.0.133", features = ["derive"] }
-thiserror = "1.0.30"
-config = "0.11.0"
-# TODO: Set used features only
-tokio = { version = "1.15.0", features = ["full"] }
-tokio-rustls = "0.23.4"
-rustls-pemfile = "1.0.1"
-base64 = "0.13.0"
+tokio = { version = "1.13.0", features = ["macros", "rt-multi-thread"] }
+serde = { version = "1.0.130", features = ["derive"] }
+tonic = { version = "0.8.3", features = ["tls"] }
 log = "0.4.14"
-env_logger = "0.9.0"
-tonic = { version = "0.6", features = ["tls"] }
-prost = "0.9"
-redis = "0.21.5"
+env_logger = "0.10.0"
+thiserror = "1.0.30"
+prost = "0.11.6"
+config = "0.11.0"
+base64 = "0.13.0"
+redis = "0.22.3"
 rand = "0.7"
 
-[dependencies.veronymous_connection]
-path = "../veronymous-connection"
+[dependencies.wg_manager_service_common]
+git = "ssh://git@github.com/boumba100/wireguard-manager-service.git"
+rev  = "e1dad005b4b7817e354a8fa08cc01a71925ea540"
 
 [dependencies.veronymous_token]
 path = "../veronymous-token"
@@ -30,9 +28,5 @@ path = "../veronymous-token"
 [dependencies.ps_signatures]
 path = "../veronymous-token/crypto/ps-signatures"
 
-[dependencies.wg_manager_service_common]
-git = "ssh://git@github.com/boumba100/wireguard-manager-service.git"
-rev  = "4d13e768d1846320e5660e17bfe5c0ed7256ddd0"
-
 [build-dependencies]
-tonic-build = "0.6"
+tonic-build = "0.8.4"

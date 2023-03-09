@@ -42,7 +42,7 @@ impl RootVeronymousToken {
             .verify(&[self.token_id], &public_key, &params)
             .map_err(|e| {
                 VeronymousTokenError::VerificationError(format!(
-                    "Could not verify token signature. {:?}",
+                    "Could not verify token_issuer signature. {:?}",
                     e
                 ))
             })?;
@@ -52,7 +52,7 @@ impl RootVeronymousToken {
 
     // TODO: Find Epoch instead of timestamp
     // TODO: Expiration
-    // Derive a veronymous token
+    // Derive a veronymous token_issuer
     pub fn derive_token<R: CryptoRng + rand::RngCore>(
         &self,
         domain: &[u8],
@@ -173,7 +173,7 @@ impl Serializable for RootVeronymousToken {
     {
         if bytes.len() != SERIALIZED_ROOT_TOKEN_SIZE {
             return Err(DeserializationError(format!(
-                "Serialized token must have {} bytes.",
+                "Serialized token_issuer must have {} bytes.",
                 SERIALIZED_ROOT_TOKEN_SIZE
             )));
         }

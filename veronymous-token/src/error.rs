@@ -11,7 +11,7 @@ pub enum VeronymousTokenError {
     #[error("Verification error. {0}")]
     VerificationError(String),
 
-    #[error("Invalid token. {0}")]
+    #[error("Invalid token_issuer. {0}")]
     InvalidToken(String),
 
     #[error("Signing error. {0}")]

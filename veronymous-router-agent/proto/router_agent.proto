@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package router_agent_service;
+
+service RouterAgentService {
+  // Create a connection with the wireguard server
+  rpc CreateConnection(ConnectionRequest) returns (ConnectionResponse);
+}
+
+message ConnectionRequest {
+  // Wireguard public key
+  bytes wg_key = 1;
+
+  // Authentication token
+  bytes token = 2;
+}
+
+message ConnectionResponse {
+  bytes ipv4_address = 1;
+
+  bytes ipv6_address = 2;
+}

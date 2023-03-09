@@ -1,8 +1,8 @@
 pub mod redis;
 
-use crate::AgentError;
-use veronymous_connection::model::{Ipv4Address, Ipv6Address};
+use crate::error::AgentError;
+use std::net::{Ipv4Addr, Ipv6Addr};
 
 pub trait ConnectionsStateDB {
-    fn assign_address(&mut self, expiry: u64) -> Result<(Ipv4Address, Ipv6Address), AgentError>;
+    fn assign_address(&mut self, expiry: u64) -> Result<(Ipv4Addr, Ipv6Addr), AgentError>;
 }

@@ -52,7 +52,7 @@ impl ProofSerialNumber {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct VeronymousToken {
-    // Hidden root token
+    // Hidden root token_issuer
     pub root: ProofRootToken,
 
     // Issuer ps signature
@@ -112,7 +112,7 @@ impl VeronymousToken {
 
         let challenge = hash_to_fr(challenge_bytes);
 
-        // Verify root token
+        // Verify root token_issuer
         if !token_proof
             .verify(
                 &[public_key.y_cap_tilde[0], params.g_tilde],
@@ -121,7 +121,7 @@ impl VeronymousToken {
             )
             .map_err(|e| {
                 VeronymousTokenError::VerificationError(format!(
-                    "Could not verify token pok. {:?}",
+                    "Could not verify token_issuer pok. {:?}",
                     e
                 ))
             })?
@@ -138,7 +138,7 @@ impl VeronymousToken {
             )
             .map_err(|e| {
                 VeronymousTokenError::VerificationError(format!(
-                    "Could not verify token pok. {:?}",
+                    "Could not verify token_issuer pok. {:?}",
                     e
                 ))
             })?
@@ -214,7 +214,7 @@ impl Serializable for VeronymousToken {
     {
         if bytes.len() != SERIALIZED_TOKEN_SIZE {
             return Err(DeserializationError(format!(
-                "Serialized token must have {} bytes",
+                "Serialized token_issuer must have {} bytes",
                 SERIALIZED_TOKEN_SIZE
             )));
         }

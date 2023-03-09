@@ -86,7 +86,7 @@ impl Serializable for RootTokenRequest {
     fn deserialize(bytes: &[u8]) -> Result<Self, VeronymousTokenError> {
         if bytes.len() != SERIALIZED_TOKEN_REQUEST_SIZE {
             return Err(DeserializationError(format!(
-                "Serialized token request must have {} bytes",
+                "Serialized token_issuer request must have {} bytes",
                 SERIALIZED_TOKEN_REQUEST_SIZE
             )));
         }
@@ -127,7 +127,7 @@ impl Serializable for RootTokenResponse {
     {
         if bytes.len() != SERIALIZED_TOKEN_RESPONSE_SIZE {
             return Err(DeserializationError(format!(
-                "Serialized token response must have {} bytes",
+                "Serialized token_issuer response must have {} bytes",
                 SERIALIZED_TOKEN_RESPONSE_SIZE
             )));
         }
@@ -206,14 +206,14 @@ pub fn issue_root_token<R: CryptoRng + rand::RngCore>(
     params: &PsParams,
     rng: &mut R,
 ) -> Result<RootTokenResponse, VeronymousTokenError> {
-    // 1) Verify the token
+    // 1) Verify the token_issuer
     if !token_request.verify(&public_key, &params)? {
         return Err(VeronymousTokenError::VerificationError(format!(
             "Token proof verification failed."
         )));
     }
 
-    // 2) Sign the token
+    // 2) Sign the token_issuer
     let blind_signature = PsBlindSignature::new(
         token_request.token_id_commitment,
         &[],
@@ -222,7 +222,9 @@ pub fn issue_root_token<R: CryptoRng + rand::RngCore>(
         &params,
         rng,
     )
-    .map_err(|e| VeronymousTokenError::SigningError(format!("Could not sign token. {:?}", e)))?;
+    .map_err(|e| {
+        VeronymousTokenError::SigningError(format!("Could not sign token_issuer. {:?}", e))
+    })?;
 
     Ok(RootTokenResponse {
         signature: blind_signature,
@@ -273,7 +275,7 @@ mod tests {
     fn test_root_token_exchange() {
         let mut rng = thread_rng();
 
-        // Create a token issuer
+        // Create a token_issuer issuer
         let issuer = TokenIssuer::generate(&mut rng);
 
         let token_id = rand_non_zero_fr(&mut rng);
@@ -289,13 +291,13 @@ mod tests {
             RootTokenRequest::deserialize(&token_request_serialized).unwrap();
         assert_eq!(token_request, token_request_deserialized);
 
-        // Verify the token request
+        // Verify the token_issuer request
         let verification_result = token_request
             .verify(&issuer.public_key, &issuer.params)
             .unwrap();
         assert!(verification_result);
 
-        // Issuer issues the token
+        // Issuer issues the token_issuer
         let token_response = issue_root_token(
             &token_request,
             &issuer.signing_key,
@@ -325,7 +327,7 @@ mod tests {
             RootVeronymousToken::deserialize(&root_token_serialized).unwrap();
         assert_eq!(root_token, root_token_deserialized);
 
-        // Veronymous token
+        // Veronymous token_issuer
         let domain = "test".as_bytes();
         let now = 1643629600u64;
 
@@ -337,7 +339,7 @@ mod tests {
             .derive_token(domain, now, &issuer.public_key, &issuer.params, &mut rng)
             .unwrap();
 
-        // Serial number for token 1 and 2 must be the same
+        // Serial number for token_issuer 1 and 2 must be the same
         assert_eq!(
             veronymous_token_1.serial_number.serial_number,
             veronymous_token_2.serial_number.serial_number

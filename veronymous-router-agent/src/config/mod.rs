@@ -1,30 +1,47 @@
 use crate::error::AgentError;
-use std::collections::HashSet;
-
+use crate::error::AgentError::ConfigError;
 use config::{Config, File};
 use serde::Deserialize;
+use std::collections::HashSet;
+use std::net::IpAddr;
 
 const CONFIG_ENV_VAR: &str = "VERONYMOUS_ROUTER_AGENT_CONFIG";
-const DEFAULT_CONFIG_LOCATION: &str = "veronymous_router_agent.yml";
+const DEFAULT_CONFIG_LOCATION: &str = "veronymous_router_agent_config.yml";
 
-/*
-* TODO: Re-organize to contain sub-components
-*/
 #[derive(Clone, Debug, Deserialize)]
-pub struct VeronymousAgentConfig {
-    pub address: String,
+pub struct RouterAgentConfig {
+    pub host: IpAddr,
+
+    pub port: u16,
+
+    pub epoch_length: u64,
+
+    pub epoch_buffer: u64,
+
+    pub key_lifetime: u64,
 
     pub wg_addresses: HashSet<String>,
 
+    // TODO: Make required
     pub wg_tls_ca: Option<String>,
 
+    // TODO: Make required
     pub wg_client_cert: Option<String>,
 
+    // TODO: Make required
     pub wg_client_key: Option<String>,
 
-    pub tls_cert: String,
+    // Subnet mask is 16; 0.0.0.0/16
+    pub wg_gateway_ipv4: String,
 
-    pub tls_cert_key: String,
+    // Subnet mask is 112
+    pub wg_gateway_ipv6: String,
+
+    pub connections_redis_address: String,
+
+    pub connections_state_redis_address: String,
+
+    pub token_ids_redis_address: String,
 
     pub token_info_endpoint: String,
 
@@ -36,37 +53,25 @@ pub struct VeronymousAgentConfig {
 
     pub token_domain: String,
 
-    pub epoch_length: u64,
+    pub tls_cert: String,
 
-    pub epoch_buffer: u64,
-
-    pub connections_redis_address: String,
-
-    pub connections_state_redis_address: String,
-
-    pub token_ids_redis_address: String,
-
-    // Subnet mask is 16; 0.0.0.0/16
-    pub wg_gateway_ipv4: String,
-
-    // Subnet mask is 112
-    pub wg_gateway_ipv6: String,
+    pub tls_key: String,
 }
 
-impl VeronymousAgentConfig {
+impl RouterAgentConfig {
     pub fn load() -> Result<Self, AgentError> {
+        // Get the config location
         let config_location =
-            std::env::var(CONFIG_ENV_VAR).unwrap_or(DEFAULT_CONFIG_LOCATION.into());
+            std::env::var(CONFIG_ENV_VAR).unwrap_or_else(|_| DEFAULT_CONFIG_LOCATION.into());
 
+        // Load the config
         let mut config = Config::new();
         config
             .merge(File::with_name(&config_location))
-            .map_err(|e| AgentError::ConfigError(e.to_string()))?;
+            .map_err(|e| ConfigError(format!("{:?}", e)))?;
 
-        let config = config
+        Ok(config
             .try_into()
-            .map_err(|e| AgentError::ConfigError(e.to_string()))?;
-
-        Ok(config)
+            .map_err(|e| ConfigError(format!("{:?}", e)))?)
     }
 }

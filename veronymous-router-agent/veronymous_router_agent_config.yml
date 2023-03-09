@@ -1,0 +1,34 @@
+host: 127.0.0.1
+port: 7777
+
+# Epoch length in seconds
+epoch_length: 600
+epoch_buffer: 60
+
+# Lifetime of the issuer keys
+# Changes every 10 minutes
+key_lifetime: 600
+
+wg_addresses:
+  - http://wg1.ny.veronymous.io:50061
+
+# The wireguard private ip
+wg_gateway_ipv4: 10.8.0.1
+wg_gateway_ipv6: fd5d:4d78:92de::1
+
+# The connections
+connections_redis_address: redis://default:password@172.20.0.2:6379/1
+# For the connections state
+connections_state_redis_address: redis://default:password@172.20.0.2:6379/2
+# For tracking serial numbers
+token_ids_redis_address: redis://default:password@172.20.0.2:6379/3
+
+token_info_endpoint: https://localhost.veronymous.io:30041
+token_info_endpoint_ca: ./certs/token-service/tls/tls_ca.pem
+token_info_endpoint_auth_cert: ./certs/token-service/auth/client.pem
+token_info_endpoint_auth_key: ./certs/token-service/auth/client.key
+
+token_domain: dev_domain
+
+tls_cert: ./certs/tls/server.pem
+tls_key: ./certs/tls/server.key

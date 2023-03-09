@@ -1,6 +1,6 @@
 pub mod redis;
 
-use crate::AgentError;
+use crate::error::AgentError;
 use veronymous_token::SerialNumber;
 
 pub trait TokenIDsDB {

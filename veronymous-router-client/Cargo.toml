@@ -6,21 +6,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-veronymous_connection = { path = "../veronymous-connection" }
 veronymous_token = { path = "../veronymous-token" }
 ps_signatures = { path = "../veronymous-token/crypto/ps-signatures" }
 crypto_common = { path = "../veronymous-token/crypto/common" }
-tokio = { version = "1.15.0", features = ["full"] }
-tokio-rustls = "0.23.4"
-rustls-pemfile = "1.0.1"
-rand = "0.7.3"
-pairing-plus = "0.19"
+tonic = { version = "0.8.3", features = ["tls"] }
+prost = "0.11.6"
+serde = { version = "1.0.130", features = ["derive"] }
 thiserror = "1.0.30"
 
-[dev-dependencies]
-tonic = "0.6"
-prost = "0.9"
-tokio = "1.17.0"
-
 [build-dependencies]
-tonic-build = "0.6"
+tonic-build = "0.8.4"

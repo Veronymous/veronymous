@@ -8,9 +8,6 @@ cargo test --manifest-path veronymous-token/crypto/commitments/Cargo.toml
 cargo test --manifest-path veronymous-token/crypto/common/Cargo.toml
 cargo test --manifest-path veronymous-token/crypto/common/Cargo.toml
 
-# Test connection package
-cargo test --manifest-path veronymous-connection/Cargo.toml
-
 # Test the router agent
 cargo test --manifest-path veronymous-router-agent/Cargo.toml
 

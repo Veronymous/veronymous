@@ -53,9 +53,9 @@ pub struct RouterAgentConfig {
 
     pub token_domain: String,
 
-    pub tls_cert: String,
+    pub tls_cert: Option<String>,
 
-    pub tls_key: String,
+    pub tls_key: Option<String>,
 }
 
 impl RouterAgentConfig {

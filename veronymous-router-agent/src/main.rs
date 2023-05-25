@@ -58,18 +58,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let router_agent_controller =
         RouterAgentServiceServer::new(RouterAgentController::new(router_service));
 
-    // TLS encryption
-    let cert = fs::read(&config.tls_cert).unwrap();
-    let key = fs::read(&config.tls_key).unwrap();
+    let mut server_builder = Server::builder();
 
-    let id = tonic::transport::Identity::from_pem(cert, key);
-    let tls_config = tonic::transport::ServerTlsConfig::new().identity(id);
+    // TLS encryption
+    if config.tls_cert.is_some() && config.tls_key.is_some() {
+        // TLS encryption
+        let cert = fs::read(&config.tls_cert.unwrap()).unwrap();
+        let key = fs::read(&config.tls_key.unwrap()).unwrap();
+
+        let id = tonic::transport::Identity::from_pem(cert, key);
+        let tls_config = tonic::transport::ServerTlsConfig::new().identity(id);
+
+        server_builder = server_builder.tls_config(tls_config).unwrap();
+    }
+
 
     info!("Starting server on {}:{}", config.host, config.port);
 
-    Server::builder()
-        .tls_config(tls_config)
-        .unwrap()
+    server_builder
         .add_service(router_agent_controller)
         .serve(SocketAddr::new(config.host, config.port))
         .await?;

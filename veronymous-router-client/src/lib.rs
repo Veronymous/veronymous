@@ -22,17 +22,20 @@ pub struct VeronymousRouterClient {
 
 impl VeronymousRouterClient {
     // TODO: Tls
-    pub async fn new(endpoint: &String, tls_ca: &[u8]) -> Result<Self, RouterClientError> {
-        // Encryption
-        let tls_ca = tonic::transport::Certificate::from_pem(tls_ca);
+    pub async fn new(endpoint: &String, tls_ca: Option<&[u8]>) -> Result<Self, RouterClientError> {
+        let mut endpoint = Endpoint::from_str(endpoint.as_str())
+            .map_err(|e| GrpcError(format!("Could not parse endpoint. {:?}", e)))?;
 
-        let tls_config = tonic::transport::ClientTlsConfig::new()
-            .ca_certificate(tls_ca);
+        // Custom tls encryption cert
+        if let Some(ca) = tls_ca {
+            let tls_ca = tonic::transport::Certificate::from_pem(ca);
 
-        let endpoint = Endpoint::from_str(endpoint.as_str())
-            .map_err(|e| GrpcError(format!("Could not parse endpoint. {:?}", e)))?
-            .tls_config(tls_config)
-            .map_err(|e| GrpcError(format!("Could not add CA certificate. {:?}", e)))?;
+            let tls_config = tonic::transport::ClientTlsConfig::new().ca_certificate(tls_ca);
+
+            endpoint = endpoint
+                .tls_config(tls_config)
+                .map_err(|e| GrpcError(format!("Could not add CA certificate. {:?}", e)))?;
+        }
 
         let client = RouterAgentServiceClient::connect(endpoint)
             .await
